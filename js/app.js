@@ -42,6 +42,10 @@ const App = (() => {
   function plain(h) { return String(h).replace(/<svg[\s\S]*?<\/svg>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").toLowerCase(); }
   function link(viewId, arg) { return `#/${active ? active.id : ""}/${viewId}${arg ? "/" + arg : ""}`; }
   function course() { return active; }
+  /* A unit file can be registered before its content is written (a stub);
+   * only units with lessons, cards or practice are shown as available. */
+  function hasContent(u) { return !!u && ((u.notes || []).length + (u.flashcards || []).length + (u.generators || []).length) > 0; }
+  function liveUnit(c, id) { const u = STUDY.getUnit(c, id); return hasContent(u) ? u : null; }
   function pctPill(p) { return `<span class="pill ${p >= 80 ? "pill-green" : p >= 60 ? "pill-amber" : "pill-red"}">${p}%</span>`; }
 
   function nowLabel(c) {
@@ -61,7 +65,7 @@ const App = (() => {
       <div class="grid-2">
         ${courses.map(c => {
           const sm = Store.summary(c);
-          const nUnits = c.units.length;
+          const nUnits = c.units.filter(hasContent).length;
           const nTypes = c.units.reduce((a, u) => a + (u.generators || []).reduce((b, g) => b + g.variantNames.length, 0), 0);
           const nextExam = c.keyDates.find(k => k.kind === "exam" && daysUntil(k.date) >= 0);
           return `
@@ -130,7 +134,7 @@ const App = (() => {
       title: "Daily mix · about 15 minutes",
       why: Practice.dailySummary() });
     if (quiz && daysUntil(quiz.date) <= 3 && gens.length) {
-      const has = quiz.unit && STUDY.getUnit(c, quiz.unit);
+      const has = quiz.unit && liveUnit(c, quiz.unit);
       plan.push({ pri: 0, icon: "✎", href: has ? link("practice", quiz.unit) : link("exam"),
         title: `${quiz.label.replace(/ due.*/, "")} due ${inDays(daysUntil(quiz.date))}`,
         why: has ? `Run a mixed session on ${has.short}, then a 10-question timed set in Exam mode.` : "Its module isn't loaded yet. Meanwhile, keep earlier material fresh with a timed set." });
@@ -153,7 +157,7 @@ const App = (() => {
     const lastExam = Store.exams()[0];
     const today = new Date().toISOString().slice(0, 10);
 
-    const unitCards = c.units.map(u => {
+    const unitCards = c.units.filter(hasContent).map(u => {
       const s = Store.deckStats(u.flashcards || []);
       const p = Store.practiceStats(u.generators || []);
       const row = c.schedule.find(r => r.unit === u.id);
@@ -178,7 +182,7 @@ const App = (() => {
         </div>`;
     }).join("");
 
-    const missing = c.schedule.filter(r => r.unit && !STUDY.getUnit(c, r.unit) && r.start <= addDays(today, 7));
+    const missing = c.schedule.filter(r => r.unit && !liveUnit(c, r.unit) && r.start <= addDays(today, 7));
     el.innerHTML = `
       <div class="card hero">
         <h2>${c.code}: ${c.name}</h2>
@@ -368,7 +372,7 @@ const App = (() => {
         <div class="tbl-wrap"><table class="tbl sched">
           <tr><th>Dates</th><th>Topic</th><th>Due</th><th></th></tr>
           ${c.schedule.map(r => {
-            const u = r.unit && STUDY.getUnit(c, r.unit);
+            const u = r.unit && liveUnit(c, r.unit);
             const isCur = cur === r;
             return `<tr class="${isCur ? "current-week" : ""} ${(r.end || r.start) < today ? "past" : ""} ${r.exam ? "exam-row" : ""}">
               <td class="nowrap">${fmtDate(r.start)}${r.end && r.end !== r.start ? " – " + fmtDate(r.end) : ""}${isCur ? ` <span class="pill pill-accent">${status === "now" ? "now" : "next"}</span>` : ""}</td>

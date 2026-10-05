@@ -122,7 +122,7 @@ async function deep(page, c, tag) {
       await answer(page, "wrong");
       await page.click("#ansCheck");
       if (await page.$("#ansCheck")) { await answer(page, "wrong"); await page.click("#ansCheck"); }
-      if (await page.$("#ansCheck")) await page.click("#ansHint");
+      while (await page.$("#ansHint")) await page.click("#ansHint");
       await check(page, tag, `practice ${g} #${k}`);
       if (!(await page.$("#pNext"))) errors.push(`[${tag}] practice ${g}: no Next button after two misses`);
     }
