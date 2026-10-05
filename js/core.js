@@ -128,6 +128,12 @@ window.STUDY = {
         const v = STUDY.util.rotate(id, variants);
         return { variant: v.name, ...v.make() };
       },
+      /* A fresh question of one named type — used to re-test the exact
+       * shape a student just missed, with new numbers and wording. */
+      makeVariant(name) {
+        const v = variants.find(x => x.name === name);
+        return v ? { variant: v.name, ...v.make() } : this.make();
+      },
     };
   },
 

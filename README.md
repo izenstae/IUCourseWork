@@ -27,6 +27,16 @@ The course's schedule, Friday quiz and Saturday Q&A due dates, exam dates (Exam 
 
 ## What's in each course
 
+**▶ Daily mix: the one session to do every day.** About 10 interleaved questions (≈15 min), assembled from what the research on durable learning says matters:
+
+- **spaced retrieval for every practice topic, not just flashcards.** A topic answered correctly *n* times in a row comes back after 1, 3, 7, 16 and then 35 days. A miss resets it.
+- **a forgetting model.** Each topic's estimated retention decays with time since it was last practised, faster for topics you know less well. Slipping topics are pulled into the mix before a cumulative exam exposes them.
+- **delayed redo of misses.** A missed question waits at least 6 hours before it is offered again. Getting it right after a gap is real learning, not short-term memory.
+- **an immediate transfer check.** After any miss, a *fresh question of the same type* with new numbers and wording comes back a few questions later, so you know whether the idea has clicked.
+- **interleaving across all modules covered so far**, with the topic hidden until you answer.
+
+The dashboard leads with the daily mix. Each topic on the Practice page shows its schedule: *new*, *review due*, *next review in 3d*, or *mastered*.
+
 **❖ Learn: concept lessons.** One short lesson per learning objective, written in plain language. Each has a *key idea*, a fresh worked *example* and the *common trap* students fall into. Every lesson ends with buttons that drop you straight into practice on that concept, because testing yourself right after reading is what makes it stick. Mark lessons done and the dashboard tracks what is left.
 
 **⧉ Flashcards with spaced repetition.** Every definition, distinction and principle is a card. Many ask for an example or a *why*, not just a definition. A six-box Leitner system schedules reviews. Cards you miss come back later *in the same session*. A **cram** mode leads with your weakest cards the night before a quiz. Keyboard: Space flips, 1 = missed, 2 = got it.
@@ -50,7 +60,7 @@ Questions use the **same formats as the exams**: multiple choice, drop-down sort
 
 **☰ Reference & study sheet.** Every card on one searchable page, plus each module's **"spotting the concept"** table: *when the question says…, think…, because…*. Tick entries and print a compact two-column study sheet.
 
-**◧ Dashboard and ◔ Progress.** A ranked "today's plan" (unread lessons, due cards, redo queue, quiz due in ≤3 days, exam in ≤14 days, weakest topic), per-module mastery, per-topic and per-question-type accuracy, timed-sitting history, a 4-week activity strip, a streak, and export/import of progress.
+**◧ Dashboard and ▤ Progress.** A ranked "today's plan" (unread lessons, the daily mix, due cards, quiz due in ≤3 days, exam in ≤14 days), per-module mastery, per-topic and per-question-type accuracy, timed-sitting history, a 4-week activity strip, a streak, and export/import of progress.
 
 | Practice: a miss buys a hint and a second try | Learn: lessons with examples and traps |
 | --- | --- |
@@ -75,7 +85,7 @@ The quickest route is to upload the new slides, notes or syllabus to Claude and 
 
 ## Checks
 
-Plain Node, no dependencies. The `Checks` workflow runs the first two on every push and pull request:
+Plain Node, no dependencies. The `Checks` workflow runs the first three on every push and pull request, and the deploy re-runs them before publishing:
 
 ```sh
 node tools/check-content.js 1000   # every generator in every course, 1000x: well-posed questions, valid answers,
@@ -83,6 +93,8 @@ node tools/check-content.js 1000   # every generator in every course, 1000x: wel
 node tools/check-app.js            # grading for every question kind, misconception diagnosis, per-course store,
                                    # Leitner ladder, weakness model, redo queue, schedule, exam builder, and that
                                    # every generated question accepts its own answer
+node tools/audit-learning.js       # learning-quality bar per unit: lessons with key idea/example/trap, every topic
+                                   # linked from a lesson, ≥5 question types per topic, explained wrong options, hint ladders
 node tools/check-browser.js        # (local, needs Playwright) drives every view of every course in headless Chromium
                                    # at desktop and phone widths, light and dark; fails on any page/console error
 ```

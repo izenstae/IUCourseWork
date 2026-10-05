@@ -29,6 +29,14 @@ const Store = (() => {
   const MAX_MISSES = 60;
   const MAX_PER_VARIANT = 3;
   const MAX_EXAMS = 20;
+  const DAY_MS = 24 * 3600 * 1000;
+  /* Practice topics are spaced too. A topic answered correctly n times in a
+   * row is next due after TOPIC_INTERVALS[n] days; a miss resets it. This
+   * is what keeps Module 1 alive until a cumulative final. */
+  const TOPIC_INTERVALS = [0, 1, 3, 7, 16, 35];
+  /* A missed question waits this long before it is offered again. Redoing it
+   * straight away only tests short-term memory; after a gap it tests learning. */
+  const MISS_DELAY_MS = 6 * 3600 * 1000;
 
   let courseId = null;
   let state = blank();
@@ -110,7 +118,7 @@ const Store = (() => {
   }
 
   return {
-    MAX_BOX, MASTER_BOX, INTERVALS,
+    MAX_BOX, MASTER_BOX, INTERVALS, TOPIC_INTERVALS, MISS_DELAY_MS,
 
     use(id) {
       if (id === courseId) return;
@@ -170,6 +178,8 @@ const Store = (() => {
       if (correct) p.correct++;
       p.recent.push(correct ? 1 : 0);
       if (p.recent.length > 10) p.recent.shift();
+      p.streak = correct ? (p.streak || 0) + 1 : 0;
+      p.last = Date.now();
       if (variant) {
         const v = p.variants[variant] || { a: 0, c: 0 };
         v.a++; if (correct) v.c++;
@@ -193,7 +203,32 @@ const Store = (() => {
       const acc = 0.7 * recentAcc + 0.3 * (p.correct / p.attempts);
       const conf = Math.min(p.attempts, 8) / 8;
       const adj = acc * conf + 0.5 * (1 - conf);
-      return Math.min(1, Math.max(0.05, 1 - adj));
+      // Forgetting: the longer since a topic was practised, relative to how
+      // well it is known, the more likely it has slipped.
+      const r = this.retention(genId);
+      return Math.min(1, Math.max(0.05, 1 - adj + 0.4 * (1 - r)));
+    },
+    /* Estimated chance the topic is still remembered, from time since last
+     * practice and the current streak (an exponential forgetting curve whose
+     * half-life grows with each consecutive correct answer). */
+    retention(genId) {
+      const p = state.practice[genId];
+      if (!p || !p.last) return 1;
+      const stability = TOPIC_INTERVALS[Math.min(p.streak || 0, TOPIC_INTERVALS.length - 1)] + 0.75;
+      const days = (Date.now() - p.last) / DAY_MS;
+      return Math.exp(-days * Math.LN2 / (stability * 1.5));
+    },
+    /* Spacing state of a topic: new | due | learning | scheduled | mastered. */
+    topicStatus(genId) {
+      const p = state.practice[genId];
+      if (!p || !p.attempts) return { state: "new", dueAt: 0, streak: 0 };
+      const streak = p.streak || 0;
+      const last = p.last || 0;
+      const dueAt = last + TOPIC_INTERVALS[Math.min(streak, TOPIC_INTERVALS.length - 1)] * DAY_MS;
+      const recentAcc = p.recent.length ? p.recent.reduce((a, b) => a + b, 0) / p.recent.length : 0;
+      if (Date.now() >= dueAt) return { state: "due", dueAt, streak };
+      if (streak >= 3 && recentAcc >= 0.8) return { state: "mastered", dueAt, streak };
+      return { state: streak ? "scheduled" : "learning", dueAt, streak };
     },
     weakVariants(genId) {
       const p = this.getPractice(genId);
@@ -225,6 +260,16 @@ const Store = (() => {
       save();
     },
     misses() { return state.misses.slice().reverse(); },
+    /* Misses old enough to be worth retrying (oldest first). */
+    dueMisses() {
+      const cut = Date.now() - MISS_DELAY_MS;
+      return state.misses.filter(m => (m.at || 0) <= cut).sort((a, b) => a.at - b.at);
+    },
+    /* Missed again: restart its delay. */
+    touchMiss(key) {
+      const m = state.misses.find(x => x.key === key);
+      if (m) { m.at = Date.now(); m.tries = (m.tries || 0) + 1; save(); }
+    },
     missCount() { return state.misses.length; },
     clearMiss(key) { state.misses = state.misses.filter(m => m.key !== key); save(); },
     clearAllMisses() { state.misses = []; save(); },

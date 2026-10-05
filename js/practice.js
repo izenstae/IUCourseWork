@@ -76,11 +76,17 @@ const Practice = (() => {
         const acc = p.attempts ? Math.round(100 * p.correct / p.attempts) : null;
         const recent = p.recent.slice(-5).map(r => `<span class="dot ${r ? "dot-ok" : "dot-bad"}">●</span>`).join("");
         const seenTypes = Object.keys(p.variants || {}).length;
+        const st = Store.topicStatus(g.id);
+        const days = Math.max(1, Math.ceil((st.dueAt - Date.now()) / 864e5));
+        const badge = st.state === "new" ? `<span class="pill">new</span>`
+          : st.state === "due" ? `<span class="pill pill-amber">review due</span>`
+          : st.state === "mastered" ? `<span class="pill pill-green">mastered · back in ${days}d</span>`
+          : `<span class="pill pill-accent">next review in ${days}d</span>`;
         rows += `
           <div class="topic-row">
             <div style="flex:1; min-width:0;">
               <div class="deck-name">${g.name}</div>
-              <div class="deck-meta">${g.blurb || ""} <span class="pill">${seenTypes}/${g.variantNames.length} question types seen</span></div>
+              <div class="deck-meta">${g.blurb || ""} ${badge} <span class="pill">${seenTypes}/${g.variantNames.length} question types seen</span></div>
             </div>
             <div class="muted topic-score">${p.attempts ? `${p.correct}/${p.attempts} (${acc}%)<br>${recent}` : "not started"}</div>
             <button class="btn btn-sm" data-gen="${g.id}">Practice</button>
@@ -92,9 +98,14 @@ const Practice = (() => {
       <div class="card">
         <h2>Practice</h2>
         <p class="muted">${scopePool.length} topics · ${nTypes} structurally different question types. Every topic cycles through all of its types before any repeats, and the numbers, names and scenarios are regenerated each time — so you learn to <em>recognise and apply the idea</em>, not to remember an answer. Questions come in the same formats as the exams: multiple choice, drop-down, select-all, numerical and graph-reading.</p>
+        <div class="daily-cta">
+          <div><b>Daily mix</b> <span class="muted">· about 15 minutes</span>
+            <div class="muted">${dailySummary()}</div></div>
+          <button class="btn" id="pDaily">▶ Start daily mix</button>
+        </div>
         <div class="toolbar">
           <select class="select" id="pFilter" aria-label="Module filter">${options}</select>
-          <button class="btn" id="pWeak">◎ Target my weak spots</button>
+          <button class="btn btn-ghost" id="pWeak">◎ Target my weak spots</button>
           <button class="btn btn-ghost" id="pMix">▶ Mixed session</button>
           <button class="btn btn-ghost" id="pIdent">⁇ Which concept? drill</button>
           <button class="btn btn-ghost" id="pRedo" ${missCount ? "" : "disabled"}>↺ Redo my misses${missCount ? ` (${missCount})` : ""}</button>
@@ -106,6 +117,7 @@ const Practice = (() => {
 
     el.querySelector("#pFilter").addEventListener("change", e => { filterUnit = e.target.value; home(el); });
     el.querySelector("#pMix").addEventListener("click", () => startMixed(el, "mixed"));
+    el.querySelector("#pDaily").addEventListener("click", () => startDaily(el));
     el.querySelector("#pWeak").addEventListener("click", () => startMixed(el, "weak"));
     el.querySelector("#pIdent").addEventListener("click", () => Identify.start(el, filterUnit));
     if (missCount) el.querySelector("#pRedo").addEventListener("click", () => startRedo(el));
@@ -165,11 +177,135 @@ const Practice = (() => {
     };
     render(el);
   }
+  /* ---------------- Daily mix ----------------
+   * The default study session: ~10 interleaved questions drawn from
+   *   · missed questions whose waiting period is over (spaced redo),
+   *   · topics that are due by their spacing schedule or slipping
+   *     (forgetting model), and topics not yet tried,
+   * across every module covered so far, topic hidden until answered.
+   * A miss schedules a fresh question of the same type three questions
+   * later, so the fix is tested while it is still being learned. */
+  const DAILY_N = 10;
+
+  function inPlayUnits() {
+    const c = course();
+    const today = new Date().toISOString().slice(0, 10);
+    const units = unitsWithGenerators();
+    const started = units.filter(u => {
+      const row = c.schedule.find(r => r.unit === u.id);
+      return !row || row.start <= today;
+    });
+    return started.length ? started : units;
+  }
+
+  function dailyPlan() {
+    const units = inPlayUnits();
+    const ids = new Set(units.map(u => u.id));
+    const misses = Store.dueMisses().filter(m => ids.has(m.unitId) && findGen(m.genId)).slice(0, 4);
+    const gens = units.flatMap(u => u.generators);
+    const due = gens.filter(g => ["due", "new"].includes(Store.topicStatus(g.id).state));
+    return { units, misses, gens, due };
+  }
+
+  function buildDaily() {
+    const { misses, gens, due } = dailyPlan();
+    if (!gens.length) return [];
+    const nTopics = Math.max(DAILY_N - misses.length, Math.min(6, gens.length));
+    // Weighted draw without replacement, favouring due/new and weak topics.
+    const pool = gens.slice();
+    const picks = [];
+    const dueSet = new Set(due.map(g => g.id));
+    while (picks.length < nTopics && pool.length) {
+      const w = pool.map(g => Math.pow(Store.weakness(g.id), 1.5) + (dueSet.has(g.id) ? 0.6 : 0.03));
+      let r = Math.random() * w.reduce((a, b) => a + b, 0), i = 0;
+      for (; i < pool.length - 1; i++) { r -= w[i]; if (r <= 0) break; }
+      picks.push(pool.splice(i, 1)[0]);
+      if (!pool.length && picks.length < nTopics) pool.push(...gens.filter(g => g !== picks[picks.length - 1]));
+    }
+    // Avoid two questions from the same topic back to back.
+    const topicItems = picks.map(g => ({ type: "gen", genId: g.id }));
+    const queue = [];
+    const missItems = misses.map(m => ({ type: "miss", miss: m }));
+    const gap = missItems.length ? Math.max(1, Math.floor(topicItems.length / missItems.length)) : 0;
+    topicItems.forEach((t, i) => {
+      queue.push(t);
+      if (gap && (i + 1) % gap === 0 && missItems.length) queue.push(missItems.shift());
+    });
+    queue.push(...missItems);
+    return queue;
+  }
+
+  function dailySummary() {
+    const { misses, due, gens } = dailyPlan();
+    const nDue = due.filter(g => Store.topicStatus(g.id).state === "due").length;
+    const nNew = due.length - nDue;
+    const bits = [];
+    if (nDue) bits.push(`${nDue} topic${nDue === 1 ? "" : "s"} due for review`);
+    if (nNew) bits.push(`${nNew} not yet tried`);
+    if (misses.length) bits.push(`${misses.length} earlier miss${misses.length === 1 ? "" : "es"} ready to retry`);
+    return (bits.length ? bits.join(" · ") : `Nothing overdue. A mix keeps all ${gens.length} topics fresh`) +
+      ". Interleaved across every module covered so far, with the topic hidden until you answer.";
+  }
+
+  function startDaily(el) {
+    const queue = buildDaily();
+    if (!queue.length) return home(el);
+    runDaily(el, { queue, idx: 0, right: 0, done: 0, retried: new Set() });
+  }
+
+  function runDaily(el, d) {
+    if (d.idx >= d.queue.length) return dailyDone(el, d);
+    const item = d.queue[d.idx];
+    const base = { attempts: 0, hintsShown: 0, answered: false, aided: false, response: null, eliminated: new Set(),
+      streak: { n: d.done, right: d.right }, mode: "daily", daily: d, item };
+    if (item.type === "miss") {
+      const m = item.miss;
+      const found = findGen(m.genId);
+      current = { ...base, gen: found.gen, unit: found.unit, problem: { ...m.problem, variant: m.variant } };
+    } else {
+      const found = findGen(item.genId);
+      const problem = item.variant ? found.gen.makeVariant(item.variant) : found.gen.make();
+      if (item.type === "retry") base.isRetry = true;
+      current = { ...base, gen: found.gen, unit: found.unit, problem };
+    }
+    render(el);
+  }
+
+  function dailyDone(el, d) {
+    current = null;
+    const pct = d.done ? Math.round(100 * d.right / d.done) : 0;
+    const { gens } = dailyPlan();
+    const tomorrow = Date.now() + 24 * 3600 * 1000;
+    const dueTomorrow = gens.filter(g => { const st = Store.topicStatus(g.id); return st.state !== "new" && st.dueAt <= tomorrow; }).length;
+    const waiting = Store.missCount() - Store.dueMisses().length;
+    el.innerHTML = `
+      <div class="card narrow center">
+        <div class="big-mark">${pct >= 80 ? "★" : "✓"}</div>
+        <h2>Daily mix done: ${d.right}/${d.done} first try</h2>
+        <p class="muted narrow-text">${pct >= 80 ? "Strong session. Topics you got right are now spaced further out." : "Every miss is scheduled to come back after a break. Struggling now and succeeding later is how this sticks."}</p>
+        <div class="grid-3 tight">
+          <div class="stat"><div class="num">${dueTomorrow}</div><div class="lbl">topics due by tomorrow</div></div>
+          <div class="stat"><div class="num">${waiting}</div><div class="lbl">misses waiting to come back</div></div>
+          <div class="stat"><div class="num">${Store.streak()}</div><div class="lbl">day streak</div></div>
+        </div>
+        <div class="btn-row center">
+          <button class="btn" id="dAgain">Another daily mix</button>
+          <a class="btn btn-ghost" href="${App.link("flashcards")}">Flashcards</a>
+          <a class="btn btn-ghost" href="${App.link("dashboard")}">Dashboard</a>
+        </div>
+      </div>`;
+    el.querySelector("#dAgain").addEventListener("click", () => startDaily(el));
+  }
+
   function nextProblem(el) {
     const c = current;
+    if (c.mode === "daily") { c.daily.idx++; return runDaily(el, c.daily); }
     if (c.mode === "redo") return runRedo(el, c.redo.queue, c.redo.idx + 1);
     if (c.mode === "topic") {
+      // After a miss, the next question re-tests the same type with new numbers.
+      const again = c.missed && c.problem.variant && !c.isRetry;
       current = newProblem(c.gen, c.unit, { mode: "topic", streak: c.streak });
+      if (again) { current.problem = c.gen.makeVariant(c.problem.variant); current.isRetry = true; }
       return render(el);
     }
     const pool = poolFor(c.filter);
@@ -188,9 +324,14 @@ const Practice = (() => {
     const p = c.problem;
     const steps = solSteps(p.sol);
     const stats = Store.getPractice(c.gen.id);
-    const hideTopic = (c.mode === "mixed" || c.mode === "weak") && !c.answered;
+    const hideTopic = (c.mode === "mixed" || c.mode === "weak" || c.mode === "daily") && !c.answered;
 
-    const label = c.mode === "redo"
+    const label = c.mode === "daily"
+      ? `<span class="pill pill-accent">Daily mix · ${c.daily.idx + 1} of ${c.daily.queue.length}</span>` +
+        (c.item.type === "miss" ? ` <span class="pill pill-amber">a question you missed earlier</span>` : c.item.type === "retry" ? ` <span class="pill pill-amber">same type as a miss, fresh numbers</span>` : "") +
+        (c.answered ? ` <span class="pill">${c.unit.short || ""}</span>` : "")
+      : c.isRetry ? `<span class="pill pill-accent">${c.unit.short || c.unit.title}</span> <span class="pill pill-amber">same type as your miss, fresh numbers</span>`
+      : c.mode === "redo"
       ? `<span class="pill pill-amber">Redo · ${c.redo.idx + 1} of ${c.redo.queue.length}</span>`
       : hideTopic
         ? `<span class="pill">${c.mode === "weak" ? "Weak-spot session" : "Mixed session"} · topic hidden</span>`
@@ -242,10 +383,27 @@ const Practice = (() => {
       c.answered = true;
       c.streak.n++; if (unaided) c.streak.right++;
 
+      c.missed = !unaided;
       if (c.mode === "redo") {
         if (solved) Store.clearMiss(c.redo.key);
+      } else if (c.mode === "daily" && c.item.type === "miss") {
+        // A spaced retry is an honest sample: it counts toward the topic.
+        Store.recordPractice(c.gen.id, unaided, p.variant);
+        if (unaided) c.daily.right++;
+        c.daily.done++;
+        if (unaided) Store.clearMiss(c.item.miss.key); else Store.touchMiss(c.item.miss.key);
       } else {
         Store.recordPractice(c.gen.id, unaided, p.variant);
+        if (c.mode === "daily") {
+          if (unaided) c.daily.right++;
+          c.daily.done++;
+          // Re-test the same type, fresh numbers, three questions later (once).
+          const key = c.gen.id + "|" + p.variant;
+          if (!unaided && !c.item.variant && !c.daily.retried.has(key)) {
+            c.daily.retried.add(key);
+            c.daily.queue.splice(Math.min(c.daily.idx + 4, c.daily.queue.length), 0, { type: "retry", genId: c.gen.id, variant: p.variant });
+          }
+        }
         if (!unaided) {
           Store.recordMiss({
             genId: c.gen.id, genName: c.gen.name, unitId: c.unit.id,
@@ -262,7 +420,8 @@ const Practice = (() => {
         <div class="verdict ${solved && unaided ? "ok" : solved ? "warn" : "bad"}">${verdict}
           ${!solved && p.kind !== "classify" ? ` <span class="verdict-ans">The answer is ${Answers.describe(p)}.</span>` : ""}</div>
         ${note ? `<p class="muted note">${note}</p>` : ""}
-        ${(c.mode === "mixed" || c.mode === "weak") ? `<p class="muted note">Topic: <b>${c.gen.name}</b> · question type: <b>${p.variant}</b></p>` : ""}
+        ${c.missed && (c.mode === "topic" || c.mode === "daily") && !c.isRetry && !(c.item && c.item.type !== "gen") ? `<p class="muted note">↻ A fresh question of this same type is coming up shortly, so you can check the idea has clicked.</p>` : ""}
+        ${(c.mode === "mixed" || c.mode === "weak" || c.mode === "daily") ? `<p class="muted note">Topic: <b>${c.gen.name}</b> · question type: <b>${p.variant}</b></p>` : ""}
         <div class="solution"><b>Worked solution</b>${p.sol}${Answers.whyList(p, c.response)}</div>`;
       hintZone.innerHTML = "";
       el.querySelector("#actZone").innerHTML = "";
@@ -335,7 +494,7 @@ const Practice = (() => {
     if (Answers.key(el.querySelector("#ansZone"), current.problem, e)) e.preventDefault();
   }
 
-  return { mount: home, solSteps, poolFor, findGen, onKey, active: () => !!current };
+  return { mount: home, solSteps, poolFor, findGen, onKey, active: () => !!current, dailySummary, startDaily, buildDaily };
 })();
 
 /* ============================================================

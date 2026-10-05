@@ -42,6 +42,10 @@ const App = (() => {
   function plain(h) { return String(h).replace(/<svg[\s\S]*?<\/svg>/g, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").toLowerCase(); }
   function link(viewId, arg) { return `#/${active ? active.id : ""}/${viewId}${arg ? "/" + arg : ""}`; }
   function course() { return active; }
+  /* A unit file can be registered before its content is written (a stub);
+   * only units with lessons, cards or practice are shown as available. */
+  function hasContent(u) { return !!u && ((u.notes || []).length + (u.flashcards || []).length + (u.generators || []).length) > 0; }
+  function liveUnit(c, id) { const u = STUDY.getUnit(c, id); return hasContent(u) ? u : null; }
   function pctPill(p) { return `<span class="pill ${p >= 80 ? "pill-green" : p >= 60 ? "pill-amber" : "pill-red"}">${p}%</span>`; }
 
   function nowLabel(c) {
@@ -61,7 +65,7 @@ const App = (() => {
       <div class="grid-2">
         ${courses.map(c => {
           const sm = Store.summary(c);
-          const nUnits = c.units.length;
+          const nUnits = c.units.filter(hasContent).length;
           const nTypes = c.units.reduce((a, u) => a + (u.generators || []).reduce((b, g) => b + g.variantNames.length, 0), 0);
           const nextExam = c.keyDates.find(k => k.kind === "exam" && daysUntil(k.date) >= 0);
           return `
@@ -110,7 +114,6 @@ const App = (() => {
     const gens = c.units.flatMap(u => u.generators || []);
     let due = 0, fresh = 0;
     for (const u of decks) { const s = Store.deckStats(u.flashcards); due += s.due; fresh += s.fresh; }
-    const misses = Store.missCount();
     const upcoming = c.keyDates.filter(k => daysUntil(k.date) >= 0);
     const quiz = upcoming.find(k => k.kind === "quiz");
     const exam = upcoming.find(k => k.kind === "exam");
@@ -127,11 +130,11 @@ const App = (() => {
     if (due) plan.push({ pri: fresh === due ? 2 : 1, icon: "⧉", href: link("flashcards"),
       title: `Review ${due} flashcard${due === 1 ? "" : "s"}`,
       why: (fresh ? `${fresh} you have never seen; the rest are scheduled for today. ` : "Scheduled for today by the spacing system. ") + `About ${Math.max(1, Math.round(due * 0.2))} min.` });
-    if (misses) plan.push({ pri: 1, icon: "↺", href: link("practice"),
-      title: `Redo ${misses} missed question${misses === 1 ? "" : "s"}`,
-      why: "Re-attempting a miss is worth more than a fresh question you would have got right." });
+    if (gens.length) plan.push({ pri: 0.5, icon: "▶", href: link("practice", "daily"),
+      title: "Daily mix · about 15 minutes",
+      why: Practice.dailySummary() });
     if (quiz && daysUntil(quiz.date) <= 3 && gens.length) {
-      const has = quiz.unit && STUDY.getUnit(c, quiz.unit);
+      const has = quiz.unit && liveUnit(c, quiz.unit);
       plan.push({ pri: 0, icon: "✎", href: has ? link("practice", quiz.unit) : link("exam"),
         title: `${quiz.label.replace(/ due.*/, "")} due ${inDays(daysUntil(quiz.date))}`,
         why: has ? `Run a mixed session on ${has.short}, then a 10-question timed set in Exam mode.` : "Its module isn't loaded yet. Meanwhile, keep earlier material fresh with a timed set." });
@@ -139,13 +142,6 @@ const App = (() => {
     if (exam && daysUntil(exam.date) <= 14 && gens.length) plan.push({ pri: 0, icon: "▦", href: link("exam"),
       title: `${exam.label.split("·")[0].trim()} ${inDays(daysUntil(exam.date))}`,
       why: "Sit a full-length rehearsal under the clock, then drill whatever it finds. Exams are cumulative." });
-    const weakest = gens.map(g => ({ g, w: Store.weakness(g.id), p: Store.getPractice(g.id) }))
-      .filter(x => x.p.attempts >= 3).sort((a, b) => b.w - a.w)[0];
-    if (weakest && weakest.w > 0.4) plan.push({ pri: 2, icon: "◎", href: link("practice"),
-      title: `Drill your weakest topic: ${weakest.g.name}`,
-      why: `${weakest.p.correct}/${weakest.p.attempts} first-try so far. "Target my weak spots" leans on topics like this.` });
-    if (!plan.length && gens.length) plan.push({ pri: 3, icon: "▶", href: link("practice"),
-      title: "Mixed practice session", why: "Nothing is due. Interleaved questions with the topic hidden are the best use of a spare ten minutes." });
     return plan.sort((a, b) => a.pri - b.pri).slice(0, 4);
   }
 
@@ -161,7 +157,7 @@ const App = (() => {
     const lastExam = Store.exams()[0];
     const today = new Date().toISOString().slice(0, 10);
 
-    const unitCards = c.units.map(u => {
+    const unitCards = c.units.filter(hasContent).map(u => {
       const s = Store.deckStats(u.flashcards || []);
       const p = Store.practiceStats(u.generators || []);
       const row = c.schedule.find(r => r.unit === u.id);
@@ -186,7 +182,7 @@ const App = (() => {
         </div>`;
     }).join("");
 
-    const missing = c.schedule.filter(r => r.unit && !STUDY.getUnit(c, r.unit) && r.start <= addDays(today, 7));
+    const missing = c.schedule.filter(r => r.unit && !liveUnit(c, r.unit) && r.start <= addDays(today, 7));
     el.innerHTML = `
       <div class="card hero">
         <h2>${c.code}: ${c.name}</h2>
@@ -376,7 +372,7 @@ const App = (() => {
         <div class="tbl-wrap"><table class="tbl sched">
           <tr><th>Dates</th><th>Topic</th><th>Due</th><th></th></tr>
           ${c.schedule.map(r => {
-            const u = r.unit && STUDY.getUnit(c, r.unit);
+            const u = r.unit && liveUnit(c, r.unit);
             const isCur = cur === r;
             return `<tr class="${isCur ? "current-week" : ""} ${(r.end || r.start) < today ? "past" : ""} ${r.exam ? "exam-row" : ""}">
               <td class="nowrap">${fmtDate(r.start)}${r.end && r.end !== r.start ? " – " + fmtDate(r.end) : ""}${isCur ? ` <span class="pill pill-accent">${status === "now" ? "now" : "next"}</span>` : ""}</td>
@@ -484,6 +480,7 @@ const App = (() => {
     dashboard, learn, reference, schedule, progress,
     flashcards: el => Flashcards.mount(el),
     practice: (el, arg) => {
+      if (arg === "daily") { Practice.mount(el); Practice.startDaily(el); return; }
       if (arg && arg.startsWith("topic:")) {
         Practice.mount(el);
         const btn = el.querySelector(`[data-gen="${arg.slice(6)}"]`);
