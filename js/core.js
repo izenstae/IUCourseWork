@@ -153,13 +153,31 @@ window.STUDY = {
     mc({ q, right, wrong, sol, why, keepOrder, rightWhy }) {
       const opts = [{ t: right, ok: true, why: rightWhy || null }]
         .concat(wrong.map(w => (typeof w === "object" && w !== null && "t" in w) ? { t: w.t, ok: false, why: w.why || null } : { t: w, ok: false, why: null }));
-      const order = keepOrder ? opts : STUDY.util.shuffle(opts);
+      /* keepOrder: true → a canonical order that never depends on which option
+       * is correct (direction words in natural order, then alphabetical);
+       * keepOrder: [labels] → exactly that order. Never "right answer first". */
+      let order;
+      if (Array.isArray(keepOrder)) {
+        const pos = t => { const i = keepOrder.indexOf(t); return i < 0 ? 999 : i; };
+        order = opts.slice().sort((a, b) => pos(a.t) - pos(b.t));
+      } else if (keepOrder) {
+        order = opts.slice().sort((a, b) => STUDY.q._rank(a.t) - STUDY.q._rank(b.t) ||
+          STUDY.util.plain(a.t).localeCompare(STUDY.util.plain(b.t)));
+      } else order = STUDY.util.shuffle(opts);
       return {
         kind: "mc", q, sol: sol || why || "",
         choices: order.map(o => o.t),
         whys: order.map(o => o.why),
         answer: order.findIndex(o => o.ok),
       };
+    },
+    _rank(t) {
+      const x = STUDY.util.plain(t).toLowerCase();
+      if (/\b(increas|rise|rises|raise|more|higher|up|grow|expand|larger)/.test(x)) return 0;
+      if (/\b(decreas|fall|falls|lower|less|fewer|down|shrink|smaller|reduce)/.test(x)) return 1;
+      if (/\b(same|unchanged|no change|constant|stays)/.test(x)) return 2;
+      if (/\b(ambiguous|indetermin|cannot|can't|depends|uncertain)/.test(x)) return 3;
+      return 4;
     },
     tf({ q, truth, sol, why }) {
       return {

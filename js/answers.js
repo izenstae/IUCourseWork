@@ -66,7 +66,9 @@ const Answers = (() => {
     const v = x != null ? x : p.answer;
     if (p.unit === "$") return U().money(U().round(v, 2));
     if (p.unit === "%") return U().fmt(v, 3) + "%";
-    return U().fmt(v, 4) + (p.unit && p.unit !== "$" && p.unit !== "%" ? " " + p.unit : "");
+    // "1 tons" → "1 ton": singular unit for a value of exactly 1.
+    const unit = p.unit && p.unit !== "$" && p.unit !== "%" ? (Math.abs(v) === 1 ? p.unit.replace(/(?<=\w)s\b/, "") : p.unit) : "";
+    return U().fmt(v, 4) + (unit ? " " + unit : "");
   }
 
   function placeholder(p) {
