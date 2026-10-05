@@ -1150,7 +1150,7 @@ ${G.plot({ xLabel: "Streetlights on the block", yLabel: "Marginal benefit and co
               { t: "Both whether the problem gets fixed and who pays", why: "With low transaction costs, the outcome is independent of who holds the right." },
               { t: "Nothing at all", why: "The rule does change who pays whom, so it matters for the parties' wealth." },
             ],
-            keepOrder: true,
+            keepOrder: false,
             rightWhy: "The rights decide the distribution of costs and payments; the efficient outcome is reached either way.",
             sol: steps("Coase: with clear rights, few parties and low transaction costs, the parties bargain to the efficient outcome.",
               `Here that outcome is ${cs.fixEff ? `for ${cs.P} to ${cs.fix}` : "to leave things as they are"}, because ${cs.fixEff ? `${$(cs.F)} &lt; ${$(cs.D)}` : `${$(cs.F)} &gt; ${$(cs.D)}`}. The judge's decision only determines which side pays.`),
