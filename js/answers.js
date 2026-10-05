@@ -19,6 +19,8 @@ const Answers = (() => {
 
   function parseNumber(text, unit) {
     let t = String(text || "").trim().toLowerCase().replace(/\s+/g, "");
+    // Typographic minus / dashes (phones, copy-paste) count as a minus sign.
+    t = t.replace(/[\u2212\u2012\u2013\u2014\uFE63\uFF0D]/g, "-");
     if (!t) return NaN;
     t = t.replace(/^\$/, "").replace(/^-\$/, "-").replace(/(years?|yrs?|units?|hours?|hrs?)$/, "");
     if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(t)) t = t.replace(/,/g, "");

@@ -12,7 +12,7 @@ It is modelled on the [MATH 340 Probability Studio](https://github.com/izenstae/
 
 | Course | Term | Units loaded | Cards | Topics | Question types |
 | --- | --- | --- | ---: | ---: | ---: |
-| **ECON B251** · Principles of Microeconomics (J. Chen) | Fall 2026 | Module 1 · Basic Economics, Module 2 · The PPC | 72 | 15 | 111 |
+| **ECON B251** · Principles of Microeconomics (J. Chen) | Fall 2026 | Modules 1–12 (all) | 415 | 94 | 692 |
 | *More courses* | | Added as material is provided | | | |
 
 ### ECON B251 content
@@ -21,7 +21,16 @@ It is modelled on the [MATH 340 Probability Studio](https://github.com/izenstae/
 | --- | ---: | ---: | ---: | ---: | --- |
 | Module 1 · Basic Economics — scarcity, micro vs. macro, rationality & self-interest, opportunity cost, marginal analysis & incentives, positive vs. normative, models & ceteris paribus | 7 | 34 | 7 | 50 | ✅ Available |
 | Module 2 · The Basic Economic Model: PPC — factors of production, reading a PPC, increasing cost, MB/MC & allocative efficiency, absolute & comparative advantage, gains from trade, growth & the per-worker production function, Rule of 70 | 8 | 38 | 8 | 61 | ✅ Available |
-| Modules 3–12 (demand & supply, elasticity, efficiency, price controls & taxes, market failures, consumer optimum, costs, perfect competition, monopoly, oligopoly & game theory) | | | | | 🔜 Added as covered in class |
+| Module 3 · Markets: Basic Demand and Supply — markets & auctions, demand & WTP, determinants of demand and supply, shift vs. movement, equilibrium, one- and two-curve shifts | 8 | 37 | 8 | 61 | ✅ Available |
+| Module 4 · Markets: Elasticity — computing and classifying price elasticity, elasticity & total revenue, determinants, cross-price, income and supply elasticity | 9 | 35 | 8 | 59 | ✅ Available |
+| Module 5 · Markets: Efficiency and Equity — allocation methods, WTP & market demand, consumer and producer surplus, surplus on a graph, deadweight loss, obstacles to efficiency, fairness | 9 | 39 | 9 | 66 | ✅ Available |
+| Module 6 · Price Ceilings, Floors, Taxes and Subsidies — binding controls, shortage/surplus size, rent ceilings, minimum wage, tax incidence, revenue & DWL, subsidies, quotas | 6 | 32 | 8 | 59 | ✅ Available |
+| Module 7 · Markets: Other Market Failures — negative and positive externalities, remedies, Coase theorem, the four types of goods, public goods & free riders, tragedy of the commons | 8 | 36 | 8 | 61 | ✅ Available |
+| Module 8 · Consumer Optimum — budget line and its shifts, total & marginal utility, MU per dollar, solving for the optimum, price & income changes | 7 | 31 | 7 | 49 | ✅ Available |
+| Module 9 · Firms: Structures, Production and Costs — economic vs. accounting profit, business types & principal–agent, market types & concentration, product curves, cost tables and curves, MC & MP, economies of scale | 8 | 41 | 9 | 71 | ✅ Available |
+| Module 10 · Perfect Competition — profit-maximizing output, profit/loss/shutdown, short-run supply, entry & exit, long-run equilibrium, efficiency, reading cost-curve graphs | 7 | 33 | 8 | 57 | ✅ Available |
+| Module 11 · Monopoly — barriers to entry, demand & marginal revenue, profit-maximizing price and output, monopoly vs. competition & deadweight loss, price discrimination, graphs | 6 | 33 | 7 | 49 | ✅ Available |
+| Module 12 · Oligopolies and Game Theory — oligopoly traits, game vocabulary, dominant strategies, Nash equilibrium, prisoners' dilemma, collusion & tit-for-tat, sequential games | 6 | 26 | 7 | 49 | ✅ Available |
 
 The course's schedule, Friday quiz and Saturday Q&A due dates, exam dates (Exam 1 Oct 1, Exam 2 Nov 5, final Dec 17), and grade weights come from the syllabus. Exam-mode presets match the real assessments.
 
@@ -116,7 +125,8 @@ node tools/check-browser.js        # (local, needs Playwright) drives every view
 │   └── econ-b251/
 │       ├── course.js          # Syllabus facts: schedule, key dates, grade weights, exam presets
 │       ├── m1.js              # Module 1 · Basic Economics
-│       └── m2.js              # Module 2 · The Basic Economic Model: PPC
+│       ├── …                  # m2.js – m11.js, one file per module
+│       └── m12.js             # Module 12 · Oligopolies and Game Theory
 ├── lib/katex/                 # Vendored KaTeX
 ├── tools/                     # check-content.js, check-app.js, check-browser.js, screenshots.js
 ├── docs/ADDING_CONTENT.md     # How to add a module or a course

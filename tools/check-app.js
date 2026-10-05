@@ -60,6 +60,8 @@ section("Number parsing");
   ok(Number.isNaN(P("1/0")), "division by zero is NaN");
   ok(Number.isNaN(P("")), "empty is NaN");
   eq(P("-4"), -4, "negative");
+  eq(P("\u221212"), -12, "Unicode minus sign accepted");
+  eq(P("\u2013$445"), -445, "en dash before dollars accepted");
 }
 
 /* ---------- numeric grading ---------- */
