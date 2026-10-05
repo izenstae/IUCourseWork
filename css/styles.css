@@ -228,7 +228,7 @@ svg.graph { display: block; width: 100%; max-width: 440px; height: auto; margin:
 .g-main { stroke: var(--accent); }
 .g-alt { stroke: var(--blue); }
 .g-dash { stroke: var(--text-dim); stroke-dasharray: 6 5; }
-.g-faint { stroke: var(--border); }
+.g-faint { stroke: color-mix(in srgb, var(--text-dim) 55%, var(--border)); }
 .g-clabel { font-size: 12px; font-weight: 700; }
 .g-main-t { fill: var(--accent); } .g-alt-t { fill: var(--blue); } .g-dash-t, .g-faint-t { fill: var(--text-dim); }
 .g-pt { fill: var(--text); stroke: var(--surface); stroke-width: 1.5; }
