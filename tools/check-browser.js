@@ -58,7 +58,8 @@ async function run() {
 }
 
 async function go(page, hash) {
-  await page.evaluate(h => { location.hash = h; }, hash);
+  // Same hash fires no hashchange; re-dispatch so the view re-mounts like a nav click.
+  await page.evaluate(h => { if (location.hash === h) window.dispatchEvent(new HashChangeEvent("hashchange")); else location.hash = h; }, hash);
   await page.waitForTimeout(120);
   steps++;
 }
@@ -177,7 +178,7 @@ async function deep(page, c, tag) {
   await go(page, `#/${c.id}/reference`);
   await page.fill("#refSearch", "cost");
   await page.waitForTimeout(80);
-  const pick = await page.$("[data-pick]");
+  const pick = await page.$(".ref-hit:not([hidden]) [data-pick]");
   if (pick) await pick.check();
   await check(page, tag, "reference search");
   await page.fill("#refSearch", "zzzzqqq");

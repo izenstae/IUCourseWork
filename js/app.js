@@ -19,7 +19,7 @@ const App = (() => {
     { id: "exam", label: "Exam Mode", ico: "⏱" },
     { id: "reference", label: "Reference", ico: "☰" },
     { id: "schedule", label: "Schedule", ico: "▦" },
-    { id: "progress", label: "Progress", ico: "◔" },
+    { id: "progress", label: "Progress", ico: "▤" },
   ];
 
   /* ---------- helpers ---------- */
