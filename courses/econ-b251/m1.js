@@ -15,6 +15,15 @@
   const NAMES = ["Maya", "Jordan", "Priya", "Luis", "Aisha", "Ben", "Chloe", "Diego", "Hana", "Isaac", "Keisha", "Mateo",
     "Nora", "Omar", "Quinn", "Rosa", "Sam", "Tariq", "Uma", "Wes", "Yara", "Zoe", "Elena", "Malik"];
   const names = k => U.sample(NAMES, k);
+  const F_NAMES = ["Maya", "Priya", "Aisha", "Chloe", "Hana", "Keisha", "Nora", "Rosa", "Uma", "Yara", "Zoe", "Elena"];
+  const M_NAMES = ["Luis", "Ben", "Diego", "Isaac", "Mateo", "Omar", "Tariq", "Wes", "Malik", "Andre", "Kevin", "Raj"];
+  /* a name whose pronouns match the sentence (she/her vs he/his), avoiding names in `used` */
+  function nameFor(text, used) {
+    const pool = /\b(she|her|hers)\b/i.test(text) ? F_NAMES : /\b(he|his|him)\b/i.test(text) ? M_NAMES : NAMES;
+    const n = U.pick(pool.filter(x => !used.includes(x)));
+    used.push(n);
+    return n;
+  }
   /* distinct random values, multiples of `step`, in [lo, hi] */
   function distinct(k, lo, hi, step) {
     const pool = [];
@@ -223,7 +232,7 @@
     "Opening a second campus bookstore would lower average textbook prices on campus.",
     "Farmers planted more soybeans this year after soybean prices rose.",
     "Unemployment benefits that last longer lead people to take longer to find new jobs.",
-    "A ban on happy-hour drink specials would reduce late-night bar revenue.",
+    "A ban on two-for-one drink deals would reduce bar revenue on weeknights.",
   ];
   /* positive but very likely (or plainly) false: positive ≠ true */
   const POS_FALSE = [
@@ -580,7 +589,7 @@
           ];
           if (5 - nMa >= 2 && Math.random() < 0.5) opts[opts.length - 1] = { t: "A study of " + U.pick(BIG) + ".", ok: false, why: "A huge firm or whole industry is still micro." };
           return Q.multi({
-            q: "<p>Select <b>every</b> question that belongs to <b>macroeconomics</b>.</p>", options: opts,
+            q: "<p>Select <b>every</b> topic that belongs to <b>macroeconomics</b>.</p>", options: opts,
             sol: S("Check each question's scope: the whole economy, or one part of it?",
               "Only questions about economy-wide totals and averages, such as inflation, national unemployment, GDP and national debt, are macro. Large firms and whole industries are still micro."),
           });
@@ -995,9 +1004,9 @@
           const right = U.pick([
             `${n} skips a $400 concert trip this month and puts the money in a savings account for a car next year.`,
             `${n} spends evenings in a certification course instead of watching TV, hoping to qualify for a better-paying job.`,
-            `${n} quits vaping, giving up something she enjoys now in exchange for better health later.`,
+            `${n} quits vaping, giving up something ${n} enjoys now in exchange for better health later.`,
             `${n} takes on extra credit hours this year to graduate a semester early and start earning sooner.`,
-            `${n} buys a cheaper used car so she can invest the difference for retirement.`,
+            `${n} buys a cheaper used car so ${n} can invest the difference for retirement.`,
             `${n} works out three mornings a week instead of sleeping in, to lower health risks later in life.`,
           ]);
           const wrong = U.sample([
@@ -1153,7 +1162,7 @@
     "A tax credit for families who install solar panels",
     "A coffee shop's loyalty card gives a free drink after nine purchases",
     "A professor offers extra credit for attending review sessions",
-    "Happy-hour half-price appetizers from 3 to 5 pm",
+    "Half-price appetizers on weekday afternoons",
     "A government subsidy that lowers the price of electric bikes",
     "An insurance discount for drivers with no tickets",
     "Financial aid that lowers the cost of attending college",
@@ -1522,11 +1531,11 @@
         name: "Maximizer or satisficer? (drop-down)",
         make() {
           const nM = U.randInt(2, 3);
-          const ns = names(5);
+          const used = [];
           const items = [
             ...U.deal("ra-max", MAXER, nM).map(t => ({ t, cat: "Maximizer", why: "Searches through options to find the best possible choice." })),
             ...U.deal("ra-sat", SATER, 5 - nM).map(t => ({ t, cat: "Satisficer", why: "Stops at the first option that is good enough." })),
-          ].map((it, i) => Object.assign(it, { t: `${ns[i]}: ${it.t}` }));
+          ].map(it => Object.assign(it, { t: it.t.replace(/\b(She|He|she|he)\b/, nameFor(it.t, used)) }));
           return Q.classify({
             q: "<p>Classify each person as a <b>maximizer</b> or a <b>satisficer</b>.</p>", cats: ["Maximizer", "Satisficer"], items,
             sol: S("Ask whether the person keeps searching for the <em>best</em> option or stops once an option is <em>good enough</em>.",
@@ -1538,7 +1547,7 @@
         name: "Why did they deviate from rationality?",
         make() {
           const sc = U.pick(REASON_SC);
-          const [n] = names(1);
+          const n = nameFor(sc.s, []);
           const whys = [
             "That fits when one side of a deal knows something important the other side doesn't.",
             "That fits when the decision maker lacks the time, money or mental capacity to evaluate the options.",
@@ -1558,9 +1567,10 @@
       {
         name: "Spot loss aversion",
         make() {
-          const ns = names(4);
-          const right = `${ns[0]} ${U.pick(LOSS)}.`;
-          const wrong = U.sample(NOT_LOSS, 3).map((x, i) => ({ t: `${ns[i + 1]} ${x.s}.`, why: x.why }));
+          const used = [];
+          const lo = U.pick(LOSS);
+          const right = `${nameFor(lo, used)} ${lo}.`;
+          const wrong = U.sample(NOT_LOSS, 3).map(x => ({ t: `${nameFor(x.s, used)} ${x.s}.`, why: x.why }));
           return Q.mc({
             q: "<p>Which person's behavior best illustrates <b>loss aversion</b> (prospect theory)?</p>", right, wrong,
             rightWhy: "The prospect of a loss weighs more heavily than an equal-sized gain.",
@@ -1647,22 +1657,22 @@
     { s: "A state raises its cigarette tax during the same year it launches a large anti-smoking ad campaign. Smoking falls, and lawmakers conclude the tax alone caused the drop.", x: "the ad campaign could also have reduced smoking" },
   ];
   const EXPERIMENTS = [
-    { goal: "whether a lower price increases sales of its smoothies", factor: "price",
+    { biz: "A smoothie bar", goal: "whether a lower price increases sales of its smoothies", factor: "price",
       right: "Lower the smoothie price for a month while keeping the menu, advertising, hours and recipes exactly the same, then compare sales.",
       wrong: [{ t: "Lower the price and add three new flavors in the same month, then compare sales.", why: "Two things changed at once, so you can't tell which one moved sales." },
         { t: "Lower the price in summer and compare with sales from the previous winter.", why: "The season changed too. Smoothie demand differs by season." },
         { t: "Ask customers whether they think they would buy more at a lower price.", why: "Models are tested against what people do, not what they say they'd do." }] },
-    { goal: "whether a later closing time increases a bookstore's weekly revenue", factor: "closing time",
+    { biz: "An independent bookstore", goal: "whether a later closing time increases its weekly revenue", factor: "closing time",
       right: "Extend closing time by two hours for several weeks while holding prices, staffing, promotions and inventory constant.",
       wrong: [{ t: "Extend hours during the week of a big sale and compare with a normal week.", why: "The sale also raises revenue, so the effect of hours can't be isolated." },
         { t: "Extend hours and hire a famous author for nightly signings.", why: "The signings change revenue too, so the effect of hours can't be isolated." },
         { t: "Compare revenue with a different bookstore in another city that stays open later.", why: "Many other things differ between the two stores." }] },
-    { goal: "whether paying tutors more raises the number of tutoring hours they offer", factor: "the hourly wage",
+    { biz: "A campus tutoring center", goal: "whether paying tutors more raises the number of tutoring hours they offer", factor: "the hourly wage",
       right: "Raise the hourly wage while keeping the schedule, location, subjects and workload the same, then compare hours offered.",
       wrong: [{ t: "Raise the wage and also let tutors work from home, then compare hours.", why: "Two incentives changed at once." },
         { t: "Raise the wage during final exams week and compare with a quiet week.", why: "Demand for tutoring differs across weeks too." },
         { t: "Ask tutors how they feel about the current wage.", why: "Feelings aren't the outcome being tested, and nothing is varied." }] },
-    { goal: "whether free shipping raises online orders", factor: "the shipping fee",
+    { biz: "An online sneaker shop", goal: "whether free shipping raises its online orders", factor: "the shipping fee",
       right: "Offer free shipping to a random half of website visitors, keep prices and site design the same for everyone, and compare orders.",
       wrong: [{ t: "Offer free shipping starting on Black Friday and compare with the week before.", why: "Black Friday raises orders on its own." },
         { t: "Offer free shipping and cut prices 10% at the same time.", why: "The price cut and free shipping are mixed together." },
@@ -1695,9 +1705,8 @@
         name: "Design the experiment",
         make() {
           const e = U.pick(EXPERIMENTS);
-          const biz = U.pick(["A small business", "A local shop owner", "A campus business", "A start-up"]);
           return Q.mc({
-            q: `<p>${biz} wants to learn ${e.goal}. Which plan best isolates the effect of ${e.factor}?</p>`, right: e.right, wrong: e.wrong,
+            q: `<p>${e.biz} wants to learn ${e.goal}. Which plan best isolates the effect of ${e.factor}?</p>`, right: e.right, wrong: e.wrong,
             sol: S("Ceteris paribus: change only the factor you're studying and hold everything else equal.",
               `The good plan varies ${e.factor} alone. Every other option lets something else change too, or doesn't measure actual behavior.`),
           });
