@@ -28,7 +28,7 @@
   const PEOPLE = ["Priya", "Mateo", "Hana", "Tobias", "Leila", "Darnell", "Sofia", "Kenji", "Amara", "Nils",
     "Rosa", "Idris", "Yuki", "Callum", "Zara", "Omar", "Greta", "Andre", "Mei", "Felix"];
   const COUNTRIES = ["Arvenia", "Belmora", "Corvatia", "Dalmark", "Esterra", "Fennland", "Galdova", "Halvany", "Istria Nova", "Jorvik"];
-  const FIRMS = ["Northwind Works", "Bluepine Co.", "Redfern Ltd.", "Copperleaf Inc.", "Maple & Stone", "Brightwater Co.", "Ironbark Ltd.", "Silverline Shop"];
+  const FIRMS = ["Northwind Works", "Bluepine Goods", "Redfern Labs", "Copperleaf Makers", "Maple & Stone", "Brightwater Mills", "Ironbark Labs", "Silverline Shop"];
 
   const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
   const pl = (n, g) => (n === 1 ? g.s : g.p);
@@ -38,6 +38,8 @@
   const steps = (...a) => a.map(step).join("");
   const d2 = x => U.fmt(U.round(x, 2), 2);
   /* An opportunity cost n/d shown as a whole number, or a fraction with its decimal. */
+  const an = g => (/^[aeiou]/i.test(g.s) ? "an " : "a ") + g.s;
+  const ocQ = (n, d, g) => `${ocStr(n, d)} ${n === d ? g.s : g.p}`;
   const ocStr = (n, d) => (n % d === 0 ? String(n / d) : `${U.frac(n, d)} ≈ ${d2(n / d)}`);
 
   function tbl(head, rows) {
@@ -585,7 +587,7 @@ ${G.plot({ xLabel: "Capital per hour worked, K/L ($)", yLabel: "Real GDP per hou
             ]),
             sol: steps(`Now you are gaining ${t.Y.p} and giving up ${t.X.p}, so the cost is in ${t.X.p}: (given up) ÷ (gained).`,
               `${r1.label} → ${r2.label}: give up ${qty(t.dx, t.X)} and gain ${U.fmt(t.cost[i])} ${t.Y.p}.`,
-              `${U.fmt(t.dx)} ÷ ${U.fmt(t.cost[i])} = <b>${ocStr(t.dx, t.cost[i])} ${t.X.p} per ${t.Y.s}</b>. It is the reciprocal of the cost of a ${t.X.s} over the same step.`),
+              `${U.fmt(t.dx)} ÷ ${U.fmt(t.cost[i])} = <b>${ocQ(t.dx, t.cost[i], t.X)} per ${t.Y.s}</b>. It is the reciprocal of the cost of ${an(t.X)} over the same step.`),
           });
         },
       },
@@ -679,7 +681,7 @@ ${G.plot({ xLabel: "Capital per hour worked, K/L ($)", yLabel: "Real GDP per hou
             q: "Which of the following is <b>not</b> one of the assumptions behind a production possibilities curve?",
             right,
             wrong: U.sample(all, 3).map(t => ({ t, why: "This is one of the four PPC assumptions." })),
-            rightWhy: "A PPC holds resources and technology fixed and assumes they are fully employed. Prices play no role in drawing it.",
+            rightWhy: "This is not an assumption: a PPC is a snapshot that holds resources and technology fixed and assumes they are fully employed.",
             sol: steps("A PPC is a snapshot: a fixed period, fixed resources, fixed technology, everything fully employed.",
               "Anything that lets resources or technology change, leaves resources idle, or brings in prices breaks the snapshot."),
           });
@@ -769,14 +771,14 @@ ${G.plot({ xLabel: "Capital per hour worked, K/L ($)", yLabel: "Real GDP per hou
           const g = G.plot({ xLabel: cap(X.p), yLabel: cap(Y.p), xMax: xm * 1.15, yMax: ym * 1.15, xTicks: ticks(xm * 1.15), yTicks: ticks(ym * 1.15),
             curves: [{ pts: straight ? [[0, ym], [xm, 0]] : G.bowed(xm, ym), style: "main", label: "PPC" }], aria: "a PPC" });
           const right = straight
-            ? `The opportunity cost of a ${X.s} is the same at every point, because resources are equally suited to both goods`
-            : `The opportunity cost of a ${X.s} rises as more ${X.p} are produced, because resources are not equally suited to both goods`;
+            ? `The opportunity cost of ${an(X)} is the same at every point, because resources are equally suited to both goods`
+            : `The opportunity cost of ${an(X)} rises as more ${X.p} are produced, because resources are not equally suited to both goods`;
           const wrong = straight
-            ? [{ t: `The opportunity cost of a ${X.s} rises as more ${X.p} are produced, because resources are not equally suited to both goods`, why: "That describes a bowed-out curve. This one is a straight line." },
-              { t: `The opportunity cost of a ${X.s} falls as more ${X.p} are produced`, why: "A straight line has a constant slope." },
+            ? [{ t: `The opportunity cost of ${an(X)} rises as more ${X.p} are produced, because resources are not equally suited to both goods`, why: "That describes a bowed-out curve. This one is a straight line." },
+              { t: `The opportunity cost of ${an(X)} falls as more ${X.p} are produced`, why: "A straight line has a constant slope." },
               { t: "Every point on this curve is unattainable", why: "Points on a PPC are attainable and efficient." }]
-            : [{ t: `The opportunity cost of a ${X.s} is the same at every point, because resources are equally suited to both goods`, why: "That describes a straight-line PPC. This one bows outward." },
-              { t: `The opportunity cost of a ${X.s} falls as more ${X.p} are produced`, why: "The curve gets steeper moving right, so each extra unit costs more." },
+            : [{ t: `The opportunity cost of ${an(X)} is the same at every point, because resources are equally suited to both goods`, why: "That describes a straight-line PPC. This one bows outward." },
+              { t: `The opportunity cost of ${an(X)} falls as more ${X.p} are produced`, why: "The curve gets steeper moving right, so each extra unit costs more." },
               { t: "Every point on this curve is unattainable", why: "Points on a PPC are attainable and efficient." }];
           return Q.mc({
             q: `Which statement best describes this economy?${g}`,
@@ -860,8 +862,8 @@ ${G.plot({ xLabel: "Capital per hour worked, K/L ($)", yLabel: "Real GDP per hou
               { value: askX ? ym : xm, why: "That is the whole intercept. Divide by the maximum of the good you are producing." },
             ]),
             sol: steps("On a straight-line PPC the cost is constant, so you can use the two endpoints.",
-              askX ? `Giving up all ${U.fmt(ym)} ${Y.p} gains ${U.fmt(xm)} ${X.p}, so each ${X.s} costs ${U.fmt(ym)} ÷ ${U.fmt(xm)} = <b>${ocStr(ym, xm)} ${Y.p}</b>.`
-                : `Giving up all ${U.fmt(xm)} ${X.p} gains ${U.fmt(ym)} ${Y.p}, so each ${Y.s} costs ${U.fmt(xm)} ÷ ${U.fmt(ym)} = <b>${ocStr(xm, ym)} ${X.p}</b>.`,
+              askX ? `Giving up all ${U.fmt(ym)} ${Y.p} gains ${U.fmt(xm)} ${X.p}, so each ${X.s} costs ${U.fmt(ym)} ÷ ${U.fmt(xm)} = <b>${ocQ(ym, xm, Y)}</b>.`
+                : `Giving up all ${U.fmt(xm)} ${X.p} gains ${U.fmt(ym)} ${Y.p}, so each ${Y.s} costs ${U.fmt(xm)} ÷ ${U.fmt(ym)} = <b>${ocQ(xm, ym, X)}</b>.`,
               "Put the good given up on top and the good gained underneath."),
           });
         },
@@ -1087,8 +1089,8 @@ ${G.plot({ xLabel: "Capital per hour worked, K/L ($)", yLabel: "Real GDP per hou
   }
   /* The opportunity-cost working for both producers, in the output-per-hour format. */
   function advWork(s) {
-    return `${s.P.a}: 1 ${s.X.s} costs ${s.ay} ÷ ${s.ax} = ${ocStr(s.ay, s.ax)} ${s.Y.p}; 1 ${s.Y.s} costs ${s.ax} ÷ ${s.ay} = ${ocStr(s.ax, s.ay)} ${s.X.p}.<br>` +
-      `${s.P.b}: 1 ${s.X.s} costs ${s.by} ÷ ${s.bx} = ${ocStr(s.by, s.bx)} ${s.Y.p}; 1 ${s.Y.s} costs ${s.bx} ÷ ${s.by} = ${ocStr(s.bx, s.by)} ${s.X.p}.`;
+    return `${s.P.a}: 1 ${s.X.s} costs ${s.ay} ÷ ${s.ax} = ${ocQ(s.ay, s.ax, s.Y)}; 1 ${s.Y.s} costs ${s.ax} ÷ ${s.ay} = ${ocQ(s.ax, s.ay, s.X)}.<br>` +
+      `${s.P.b}: 1 ${s.X.s} costs ${s.by} ÷ ${s.bx} = ${ocQ(s.by, s.bx, s.Y)}; 1 ${s.Y.s} costs ${s.bx} ÷ ${s.by} = ${ocQ(s.bx, s.by, s.X)}.`;
   }
   function hoursScenario() {
     for (let tries = 0; tries < 500; tries++) {
@@ -1152,7 +1154,7 @@ ${G.plot({ xLabel: "Capital per hour worked, K/L ($)", yLabel: "Real GDP per hou
             ]),
             sol: steps(`In one ${s.P.hr}, ${who} can make ${qty(askX ? x : y, g)} <em>or</em> ${qty(askX ? y : x, h)}. Making ${g.p} means giving up ${h.p}.`,
               `${qty(den, g)} cost ${qty(num, h)}, so one ${g.s} costs ${num} ÷ ${den}.`,
-              `= <b>${ocStr(num, den)} ${h.p}</b> per ${g.s}.`),
+              `= <b>${ocQ(num, den, h)}</b> per ${g.s}.`),
           });
         },
       },
@@ -1169,14 +1171,14 @@ ${G.plot({ xLabel: "Capital per hour worked, K/L ($)", yLabel: "Real GDP per hou
             q: `Output ${s.P.per}:${advTable(s)}Who has the <b>comparative advantage</b> in ${g.p}?`,
             right: winner,
             wrong: [
-              { t: loser, why: loserMore ? `${loser} makes more ${g.p} (absolute advantage), but at a higher opportunity cost.` : `${loser}'s opportunity cost of a ${g.s} is higher.` },
+              { t: loser, why: loserMore ? `${loser} makes more ${g.p} (absolute advantage), but at a higher opportunity cost.` : `${loser}'s opportunity cost of ${an(g)} is higher.` },
               { t: "Neither — their opportunity costs are equal", why: "Compute them: they are not equal." },
               { t: "Both of them", why: "With two producers and different opportunity costs, only one can have the lower cost of a given good." },
             ],
             rightWhy: `${winner} gives up less to make each ${g.s}.`,
             sol: steps("Comparative advantage = lower <em>opportunity cost</em>, not higher output. Compute what each gives up per unit.",
               advWork(s),
-              `Lower cost of a ${g.s}: <b>${winner}</b> (${d2(Math.min(oa, ob))} vs ${d2(Math.max(oa, ob))} ${askX ? s.Y.p : s.X.p}).`),
+              `Lower cost of ${an(g)}: <b>${winner}</b> (${d2(Math.min(oa, ob))} vs ${d2(Math.max(oa, ob))} ${askX ? s.Y.p : s.X.p}).`),
           });
         },
       },
@@ -1220,7 +1222,7 @@ ${G.plot({ xLabel: "Capital per hour worked, K/L ($)", yLabel: "Real GDP per hou
             ],
             rightWhy: `${winner} gives up fewer ${h.p} per ${g.s}.`,
             sol: steps(`With hours per unit, the time spent on one ${g.s} could have made (hours per ${g.s}) ÷ (hours per ${h.s}) ${h.p}. The good you want goes on top.`,
-              `${s.P.a}: ${askX ? s.hax : s.hay} ÷ ${askX ? s.hay : s.hax} = ${ocStr(askX ? s.hax : s.hay, askX ? s.hay : s.hax)} ${h.p}. ${s.P.b}: ${askX ? s.hbx : s.hby} ÷ ${askX ? s.hby : s.hbx} = ${ocStr(askX ? s.hbx : s.hby, askX ? s.hby : s.hbx)} ${h.p}.`,
+              `${s.P.a}: ${askX ? s.hax : s.hay} ÷ ${askX ? s.hay : s.hax} = ${ocQ(askX ? s.hax : s.hay, askX ? s.hay : s.hax, h)}. ${s.P.b}: ${askX ? s.hbx : s.hby} ÷ ${askX ? s.hby : s.hbx} = ${ocQ(askX ? s.hbx : s.hby, askX ? s.hby : s.hbx, h)}.`,
               `Lower opportunity cost: <b>${winner}</b>. Needing fewer hours is absolute advantage, which does not decide specialization.`),
           });
         },
@@ -1243,8 +1245,8 @@ ${G.plot({ xLabel: "Capital per hour worked, K/L ($)", yLabel: "Real GDP per hou
               { value: num, why: `That is the number of ${s.P.hrs} per ${g.s}, not what is given up.` },
             ]),
             sol: steps(`Making one ${g.s} takes ${who} ${num} ${s.P.hrs}. Ask how many ${h.p} those hours could have made instead.`,
-              `Each ${h.s} takes ${den} ${s.P.hrs}, so ${num} ${s.P.hrs} could make ${num} ÷ ${den} ${h.p}.`,
-              `Opportunity cost = <b>${ocStr(num, den)} ${h.p}</b> per ${g.s}. (Output-per-hour data use the reverse ratio.)`),
+              `Each ${h.s} takes ${den} ${den === 1 ? s.P.hr : s.P.hrs}, so ${num} ${s.P.hrs} could make ${num} ÷ ${den} ${h.p}.`,
+              `Opportunity cost = <b>${ocQ(num, den, h)}</b> per ${g.s}. (Output-per-hour data use the reverse ratio.)`),
           });
         },
       },
@@ -1267,7 +1269,7 @@ ${G.plot({ xLabel: "Capital per hour worked, K/L ($)", yLabel: "Real GDP per hou
             ],
             sol: steps("Compute each producer's opportunity cost of a unit of each good.",
               advWork(s),
-              `The costs are identical (${ocStr(ay, ax)} ${Y.p} per ${X.s} for both), so there is no comparative advantage and no gain from specializing.`),
+              `The costs are identical (${ocQ(ay, ax, Y)} per ${X.s} for both), so there is no comparative advantage and no gain from specializing.`),
           });
         },
       },
@@ -1294,9 +1296,9 @@ ${G.plot({ xLabel: "Capital per hour worked, K/L ($)", yLabel: "Real GDP per hou
               { t: opt(above), why: `Above ${highP}'s own cost of ${d2(hi)} ${s.Y.p}: ${highP} would rather make ${s.X.p} itself.` },
               { t: opt(Math.random() < 0.5 ? lo : hi), why: "Exactly equal to one producer's opportunity cost, so that producer gains nothing. The price must lie strictly between." },
             ],
-            sol: steps(`A trade helps both only if the price of a ${s.X.s} lies <em>strictly between</em> the two opportunity costs of a ${s.X.s}.`,
-              `${lowP}'s cost of a ${s.X.s}: ${d2(lo)} ${s.Y.p}. ${highP}'s cost: ${d2(hi)} ${s.Y.p}.`,
-              `Only <b>${d2(mid)} ${s.Y.p}</b> lies strictly between ${d2(lo)} and ${d2(hi)}: the seller gets more than its cost, and the buyer pays less than its own cost.`),
+            sol: steps(`A trade helps both only if the price of ${an(s.X)} lies <em>strictly between</em> the two opportunity costs of ${an(s.X)}.`,
+              `${lowP}'s cost of ${an(s.X)}: ${d2(lo)} ${s.Y.p}. ${highP}'s cost: ${d2(hi)} ${s.Y.p}.`,
+              `Only <b>${d2(mid)} ${mid === 1 ? s.Y.s : s.Y.p}</b> lies strictly between ${d2(lo)} and ${d2(hi)}: the seller gets more than its cost, and the buyer pays less than its own cost.`),
           });
         },
       },
@@ -1331,7 +1333,7 @@ ${G.plot({ xLabel: "Capital per hour worked, K/L ($)", yLabel: "Real GDP per hou
       const T = U.pick(Ts);
       return mkTrade(P, X, Y, ax, ay, bx, by, H, hA, hB, p, T);
     }
-    return mkTrade({ a: "Ines", b: "Rafa", per: "per hour", hr: "hour", hrs: "hours" }, GOODS[17], GOODS[6], 6, 2, 4, 4, 8, 4, 4, 2, 20);
+    return mkTrade({ a: "Ines", b: "Rafa", per: "per hour", hr: "hour", hrs: "hours" }, GOODS[17], GOODS[6], 6, 2, 4, 4, 8, 4, 4, 0.5, 20);
   }
   function mkTrade(P, X, Y, ax, ay, bx, by, H, hA, hB, p, T) {
     const s = { P, X, Y, ax, ay, bx, by, H, hA, hB, p, T, R: T * p };
@@ -1381,7 +1383,7 @@ ${G.plot({ xLabel: "Capital per hour worked, K/L ($)", yLabel: "Real GDP per hou
               { value: wrongWay, why: `That assumes the wrong person makes ${g.p}. Check who has the lower opportunity cost.` },
             ]),
             sol: steps("First find comparative advantage (lower opportunity cost), then give each person's whole day to that good.",
-              `${s.P.a}'s cost of a ${s.X.s} is ${ocStr(s.ay, s.ax)} ${s.Y.p}, versus ${s.P.b}'s ${ocStr(s.by, s.bx)}. So ${s.P.a} specializes in ${s.X.p} and ${s.P.b} in ${s.Y.p}.`,
+              `${s.P.a}'s cost of ${an(s.X)} is ${ocQ(s.ay, s.ax, s.Y)}, versus ${s.P.b}'s ${ocStr(s.by, s.bx)}. So ${s.P.a} specializes in ${s.X.p} and ${s.P.b} in ${s.Y.p}.`,
               askX ? `${s.P.a}: ${s.H} × ${s.ax} = <b>${ans} ${s.X.p}</b> (${s.P.b} makes none).` : `${s.P.b}: ${s.H} × ${s.by} = <b>${ans} ${s.Y.p}</b> (${s.P.a} makes none).`),
           });
         },
@@ -1522,10 +1524,10 @@ ${G.plot({ xLabel: "Capital per hour worked, K/L ($)", yLabel: "Real GDP per hou
           const s = tradeScenario();
           const own = [
             { t: `${s.P.a} has the comparative advantage in ${s.X.p}.`, ok: true },
-            { t: `${s.P.b} has the comparative advantage in ${s.X.p}.`, ok: false, why: `${s.P.b}'s cost of a ${s.X.s} (${ocStr(s.by, s.bx)} ${s.Y.p}) is higher than ${s.P.a}'s (${ocStr(s.ay, s.ax)}).` },
+            { t: `${s.P.b} has the comparative advantage in ${s.X.p}.`, ok: false, why: `${s.P.b}'s cost of ${an(s.X)} (${ocQ(s.by, s.bx, s.Y)}) is higher than ${s.P.a}'s (${ocStr(s.ay, s.ax)}).` },
             { t: `After the trade, ${s.P.b} has more of both goods than with no trade.`, ok: true },
-            { t: `The price (${d2(s.p)} ${s.Y.p} per ${s.X.s}) lies between the two producers' opportunity costs of a ${s.X.s}.`, ok: true },
-            { t: `At this price ${s.P.b} pays more for each ${s.X.s} than it would cost ${s.P.b} to make one.`, ok: false, why: `${s.P.b}'s own cost is ${ocStr(s.by, s.bx)} ${s.Y.p}, more than the price of ${d2(s.p)}.` },
+            { t: `The price (${d2(s.p)} ${s.Y.p} per ${s.X.s}) lies between the two producers' opportunity costs of ${an(s.X)}.`, ok: true },
+            { t: `At this price ${s.P.b} pays more for each ${s.X.s} than it would cost ${s.P.b} to make one.`, ok: false, why: `${s.P.b}'s own cost is ${ocQ(s.by, s.bx, s.Y)}, more than the price of ${d2(s.p)}.` },
             { t: `Specializing gives fewer ${s.Y.p} in total than the no-trade plan.`, ok: false, why: `Total ${s.Y.p} rise from ${s.noA.y + s.noB.y} to ${s.prodB.y}.` },
           ];
           const opts = U.sample(own, 3).concat(U.sample(TRADE_GENERAL, 2));

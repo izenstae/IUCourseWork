@@ -12,14 +12,15 @@ It is modelled on the [MATH 340 Probability Studio](https://github.com/izenstae/
 
 | Course | Term | Units loaded | Cards | Topics | Question types |
 | --- | --- | --- | ---: | ---: | ---: |
-| **ECON B251** · Principles of Microeconomics (J. Chen) | Fall 2026 | Module 1 · Basic Economics, Module 2 · The PPC | __CARDS__ | __TOPICS__ | __TYPES__ |
+| **ECON B251** · Principles of Microeconomics (J. Chen) | Fall 2026 | Module 1 · Basic Economics, Module 2 · The PPC | 72 | 15 | 111 |
 | *More courses* | | Added as material is provided | | | |
 
 ### ECON B251 content
 
 | Module | Lessons | Cards | Topics | Question types | Status |
 | --- | ---: | ---: | ---: | ---: | --- |
-__UNIT_ROWS__
+| Module 1 · Basic Economics — scarcity, micro vs. macro, rationality & self-interest, opportunity cost, marginal analysis & incentives, positive vs. normative, models & ceteris paribus | 7 | 34 | 7 | 50 | ✅ Available |
+| Module 2 · The Basic Economic Model: PPC — factors of production, reading a PPC, increasing cost, MB/MC & allocative efficiency, absolute & comparative advantage, gains from trade, growth & the per-worker production function, Rule of 70 | 8 | 38 | 8 | 61 | ✅ Available |
 | Modules 3–12 (demand & supply, elasticity, efficiency, price controls & taxes, market failures, consumer optimum, costs, perfect competition, monopoly, oligopoly & game theory) | | | | | 🔜 Added as covered in class |
 
 The course's schedule, Friday quiz and Saturday Q&A due dates, exam dates (Exam 1 Oct 1, Exam 2 Nov 5, final Dec 17), and grade weights come from the syllabus. Exam-mode presets match the real assessments.
