@@ -28,7 +28,7 @@ jobs:
         with:
           node-version: "20"
       - name: Verify content before publishing
-        run: node tools/check-content.js 300 && node tools/check-app.js
+        run: node tools/check-content.js 300 && node tools/check-app.js && node tools/audit-learning.js --strict
       - name: Configure Pages
         uses: actions/configure-pages@v5
         with:

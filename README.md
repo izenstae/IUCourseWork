@@ -85,7 +85,7 @@ The quickest route is to upload the new slides, notes or syllabus to Claude and 
 
 ## Checks
 
-Plain Node, no dependencies. The `Checks` workflow runs the first two on every push and pull request:
+Plain Node, no dependencies. The `Checks` workflow runs the first three on every push and pull request, and the deploy re-runs them before publishing:
 
 ```sh
 node tools/check-content.js 1000   # every generator in every course, 1000x: well-posed questions, valid answers,
@@ -93,6 +93,8 @@ node tools/check-content.js 1000   # every generator in every course, 1000x: wel
 node tools/check-app.js            # grading for every question kind, misconception diagnosis, per-course store,
                                    # Leitner ladder, weakness model, redo queue, schedule, exam builder, and that
                                    # every generated question accepts its own answer
+node tools/audit-learning.js       # learning-quality bar per unit: lessons with key idea/example/trap, every topic
+                                   # linked from a lesson, ≥5 question types per topic, explained wrong options, hint ladders
 node tools/check-browser.js        # (local, needs Playwright) drives every view of every course in headless Chromium
                                    # at desktop and phone widths, light and dark; fails on any page/console error
 ```
