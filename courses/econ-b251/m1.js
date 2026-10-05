@@ -1270,7 +1270,7 @@
           if (q + 1 < n) traps.push({ value: q + 1, why: `The ${ordinal(q + 1)} ${c.u1} costs more than it adds (MC &gt; MB), so it shouldn't be chosen.` });
           traps.push({ value: 1, why: "Stopping where MB is highest leaves out units that still add more benefit than they cost." });
           return Q.num({
-            q: `<p>The table shows the marginal benefit and marginal cost of each ${c.u1} for ${c.who}.</p><table class="data-tbl"><tr><th>${c.label}</th><th>Marginal benefit</th><th>Marginal cost</th></tr>${rows}</table><p>How many ${c.unit} should ${c.who} choose to get the largest net benefit?</p>`,
+            q: `<p>The table shows the marginal benefit and marginal cost of each ${c.u1} for ${c.who}.</p><table class="data-tbl"><tr><th>${c.label}</th><th>Marginal benefit</th><th>Marginal cost</th></tr>${rows}</table><p>How many ${c.unit} should ${c.who.replace(/^an? /, "the ")} choose to get the largest net benefit?</p>`,
             answer: q, unit: c.nu, kind: "count", traps,
             sol: S("Think one unit at a time: take the next unit only if its marginal benefit is greater than its marginal cost.",
               `Units 1–${q}: MB &gt; MC (e.g. unit ${q}: ${U.money(mb[q - 1])} vs ${U.money(mc[q - 1])}). Unit ${q + 1}: MB ${U.money(mb[q])} &lt; MC ${U.money(mc[q])}.`,
@@ -1286,14 +1286,17 @@
           const wage = U.pick([12, 14, 15, 16, 18, 20]);
           const yes = Math.random() < 0.5;
           const mb = yes ? wage + U.randInt(2, 10) : wage - U.randInt(2, Math.min(10, wage - 2));
-          const totalB = U.randInt(11, 20) * 10, totalC = h * wage;
+          let totalB = U.randInt(11, 20) * 10;
+          const totalC = h * wage;
+          if (totalB / h <= mb + 4) totalB = Math.ceil((h * (mb + 6)) / 10) * 10;
+          const avg = U.round(totalB / h, 2);
           const sunk = U.pick([30, 40, 50, 60]);
           const courseFee = `${U.money(sunk)} nonrefundable fee for a test-prep app`;
           const rightT = yes
             ? `Yes: the next hour adds ${U.money(mb)} of benefit and costs only ${U.money(wage)}.`
             : `No: the next hour would cost ${U.money(wage)} but add only ${U.money(mb)}.`;
           const wrong = [
-            { t: yes ? `No: the next hour would cost ${U.money(wage)} but add only ${U.money(mb)}.` : `Yes: the next hour adds ${U.money(mb)} of benefit and costs only ${U.money(wage)}.`, why: "That gets the comparison backwards. Check which number is larger." },
+            { t: yes ? `No: this hour's benefit (${U.money(mb)}) is below the average benefit per hour so far (${U.money(avg)}), so studying has stopped being worthwhile.` : `Yes: the average benefit per hour so far (${U.money(avg)}) is well above the ${U.money(wage)} wage.`, why: "Averages describe the hours already studied. The decision about the next hour depends only on that hour's marginal benefit versus its marginal cost." },
             { t: `${yes ? "No" : "Yes"}: the total benefit so far (${U.money(totalB)}) ${yes ? "is already large enough" : "exceeds the total cost so far (" + U.money(totalC) + ")"}.`, why: "Totals so far don't tell you whether the <em>next</em> hour is worth it. Compare that hour's marginal benefit with its marginal cost." },
             { t: `Yes: ${n} already paid the ${U.money(sunk)} app fee and should get the most out of it.`, why: "The fee is a sunk cost. It's gone whatever happens next, so it shouldn't affect the decision." },
           ];
@@ -1333,7 +1336,7 @@
             wrong: all.filter(x => x !== right).map(t => ({ t, why: t.includes("same") ? "Recompute MB and MC for each hour after the change. The crossing point moves." : "Recompute MB vs. MC for each hour after the change and count the hours where MB still exceeds MC." })),
             sol: S("An incentive shifts marginal benefit or marginal cost. Redo the comparison hour by hour.",
               `Before: MB &gt; MC for the first ${q} hours, so the owner stays open ${q} extra hours.`,
-              `After the change: MB &gt; MC for the first ${q2} hours. So the owner chooses ${q2}: <b>${right.toLowerCase()}</b>.${q2 === q ? " The change wasn't big enough to flip any hour." : ""}`),
+              `After the change: MB &gt; MC for the first ${q2} ${U.plural(q2, "hour")}. So the owner chooses ${q2}: <b>${right.toLowerCase()}</b>.${q2 === q ? " The change wasn't big enough to flip any hour." : ""}`),
           });
         },
       },
