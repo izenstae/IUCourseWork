@@ -190,12 +190,10 @@
    * ============================================================ */
   const cues = [
     { when: "“should”, “ought”, “fair”, “too high”, “deserve”", think: "Normative statement", why: "A value judgment, so no data can settle it." },
-    { when: "A claim that could be checked with data, even a wrong one", think: "Positive statement", why: "Positive means testable, not true." },
     { when: "“X% of people believe…”, “economists disagree about…”", think: "Positive (a fact about opinions)", why: "A survey can verify what people believe." },
     { when: "One firm, one household, one market or industry (however large)", think: "Microeconomics", why: "It is a part of the economy, not the whole." },
     { when: "Inflation, national unemployment, GDP, overall growth, federal tax policy", think: "Macroeconomics", why: "Economy-wide totals and averages." },
-    { when: "“Gave up”, “instead of”, “next-best”, “free ticket”", think: "Opportunity cost / TANSTAAFL", why: "Value of the single best alternative forgone, never zero." },
-    { when: "Several alternatives listed with dollar values", think: "Take the max of the forgone options, don't add them", why: "You could only have done one of them." },
+    { when: "“Gave up”, “instead of”, “next-best”, “free ticket”, a list of alternatives with values", think: "Opportunity cost / TANSTAAFL", why: "Value of the single best alternative forgone: never zero, never the sum." },
     { when: "“Skips work”, “instead of a job”, plus money spent", think: "Explicit + implicit cost", why: "Opportunity cost = money spent + earnings forgone (minus what you'd pay anyway)." },
     { when: "“One more”, “an extra hour”, “additional unit”", think: "Marginal analysis: compare MB with MC", why: "Totals, averages and sunk costs don't decide the next step." },
     { when: "Fine, fee, tax, penalty / bonus, discount, subsidy, reward", think: "Negative / positive incentive", why: "Changes MC or MB, so the chosen quantity changes." },
