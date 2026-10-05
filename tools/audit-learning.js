@@ -13,6 +13,8 @@
  *   · feedback: share of wrong MC options that explain the
  *     misconception; share of numeric questions with named traps
  *   · hint ladder: share of solutions with 2+ steps
+ *   · answer-position bias: no MC type may always put the right answer
+ *     in one slot, and no true/false type may always be True (or False)
  *   · flashcards and cue-table size
  * --strict exits non-zero if any unit falls below the thresholds.
  * ============================================================ */
@@ -31,6 +33,7 @@ const ctx = vm.createContext({ console });
 ctx.window = ctx;
 for (const f of files) vm.runInContext(fs.readFileSync(path.join(root, f), "utf8"), ctx, { filename: f });
 
+const U_plain = h => String(h).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 const T = { lessons: 3, typesPerTopic: 5, whyShare: 0.8, stepShare: 0.9, cards: 15, cues: 8, kinds: 3 };
 let failures = 0;
 const pct = x => (x * 100).toFixed(0) + "%";
@@ -54,6 +57,7 @@ for (const course of ctx.STUDY.courses) {
     let mcWrong = 0, mcWhy = 0, nums = 0, numTraps = 0, sols = 0, multiStep = 0;
     const kinds = {};
     const thinTopics = [];
+    const answerPos = {};   // "gen [variant]" → set of answer positions
     for (const g of gens) {
       if (g.variantNames.length < T.typesPerTopic) thinTopics.push(`${g.id} (${g.variantNames.length})`);
       for (let i = 0; i < 120; i++) {
@@ -61,6 +65,10 @@ for (const course of ctx.STUDY.courses) {
         kinds[p.kind] = (kinds[p.kind] || 0) + 1;
         sols++;
         if (((p.sol || "").match(/class="sol-step"/g) || []).length >= 2) multiStep++;
+        if (p.kind === "mc") {
+          const k = g.id + " [" + p.variant + "]";
+          (answerPos[k] = answerPos[k] || new Set()).add(p.choices.length > 2 ? p.answer : U_plain(p.choices[p.answer]));
+        }
         if (p.kind === "mc" && p.choices.length > 2) {
           p.choices.forEach((_, k) => { if (k !== p.answer) { mcWrong++; if (p.whys && p.whys[k]) mcWhy++; } });
         }
@@ -68,6 +76,9 @@ for (const course of ctx.STUDY.courses) {
       }
     }
     const whyShare = mcWrong ? mcWhy / mcWrong : 1;
+    // A question type whose right answer always sits in the same slot (or a
+    // true/false that is always "True") can be gamed without understanding.
+    const pinned = Object.entries(answerPos).filter(([, v]) => v.size === 1).map(([k]) => k);
     const stepShare = sols ? multiStep / sols : 1;
     const nKinds = Object.keys(kinds).length;
     const problems = [];
@@ -80,6 +91,7 @@ for (const course of ctx.STUDY.courses) {
     if ((u.flashcards || []).length < T.cards) problems.push(`only ${(u.flashcards || []).length} flashcards`);
     if ((u.cues || []).length < T.cues) problems.push(`only ${(u.cues || []).length} cue rows`);
     if (gens.length && nKinds < T.kinds) problems.push(`only ${nKinds} question formats`);
+    if (pinned.length) problems.push(`answer always in the same position (gameable): ${pinned.join(", ")}`);
 
     const kindMix = Object.entries(kinds).map(([k, n]) => `${k} ${pct(n / sols)}`).join(", ");
     console.log(`  ${u.id.padEnd(4)} ${problems.length ? "✗" : "✓"} ${notes.length} lessons · ${(u.flashcards || []).length} cards · ${(u.cues || []).length} cues · ${gens.length} topics / ${gens.reduce((a, g) => a + g.variantNames.length, 0)} types`);

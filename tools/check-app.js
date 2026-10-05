@@ -83,6 +83,14 @@ section("Numeric grading");
   ok(Answers.grade({ kind: "num", answer: 4 }, "four").valid === false, "non-number is invalid, not wrong");
 }
 
+section("Answer display");
+{
+  eq(Answers.fmtNum({ answer: 1, unit: "tons" }), "1 ton", "singular unit for 1");
+  eq(Answers.fmtNum({ answer: 3, unit: "tons" }), "3 tons", "plural unit otherwise");
+  eq(Answers.fmtNum({ answer: 1, unit: "acre-feet of water" }), "1 acre-feet of water", "only a trailing plural s on the first word is touched");
+  eq(Answers.fmtNum({ answer: 1500, unit: "$" }), "$1,500", "money");
+}
+
 /* ---------- diagnosis ---------- */
 section("Misconception diagnosis");
 {
@@ -104,8 +112,15 @@ section("Choice-based kinds");
     const mc = STUDY.q.mc({ q: "?", right: "right", wrong: ["a", "b", "c"], sol: "s" });
     eq(mc.choices[mc.answer], "right", "mc answer index tracks the shuffled correct choice");
   }
-  const kept = STUDY.q.mc({ q: "?", right: "up", wrong: ["down", "same"], keepOrder: true, sol: "s" });
-  eq(kept.choices.join(","), "up,down,same", "keepOrder keeps order");
+  for (const right of ["It increases", "It decreases", "It stays the same"]) {
+    const kept = STUDY.q.mc({ q: "?", right, wrong: ["It increases", "It decreases", "It stays the same"].filter(x => x !== right), keepOrder: true, sol: "s" });
+    eq(kept.choices.join(","), "It increases,It decreases,It stays the same", `keepOrder uses natural order whatever the answer (${right})`);
+  }
+  const posFirst = new Set();
+  for (const right of ["Cat", "Ant", "Bee"]) posFirst.add(STUDY.q.mc({ q: "?", right, wrong: ["Cat", "Ant", "Bee"].filter(x => x !== right), keepOrder: true, sol: "s" }).answer);
+  eq(posFirst.size, 3, "keepOrder never pins the right answer to one position");
+  const ex = STUDY.q.mc({ q: "?", right: "b", wrong: ["a", "c"], keepOrder: ["c", "b", "a"], sol: "s" });
+  eq(ex.choices.join(","), "c,b,a", "explicit keepOrder list is honoured");
   const tf = STUDY.q.tf({ q: "?", truth: false, why: "no", sol: "s" });
   eq(tf.answer, 1, "tf false → index 1");
   ok(Answers.grade(tf, 1).correct && !Answers.grade(tf, 0).correct, "tf grading");

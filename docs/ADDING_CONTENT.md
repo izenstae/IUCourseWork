@@ -99,7 +99,7 @@ All builders return an object with `q` (question HTML), `sol` (worked solution H
 
 | Builder | Use it for | Notes |
 | --- | --- | --- |
-| `Q.mc({ q, right, wrong, sol, rightWhy })` | Multiple choice | `wrong` is a list of strings **or `{ t, why }`**. The `why` names the misconception behind that option. It is shown when a student picks it, and listed with the solution. Write a `why` for every wrong option you can. Choices are shuffled. Pass `keepOrder: true` for ordered options such as "increases / decreases / no change". |
+| `Q.mc({ q, right, wrong, sol, rightWhy })` | Multiple choice | `wrong` is a list of strings **or `{ t, why }`**. The `why` names the misconception behind that option. It is shown when a student picks it, and listed with the solution. Write a `why` for every wrong option you can. Choices are shuffled. Pass `keepOrder: true` for ordered options such as "increases / decreases / no change": they appear in a canonical order (up, down, same, ambiguous, then alphabetical) that never depends on which option is right. Pass `keepOrder: ["…", "…"]` to set the exact order. Never put the right answer in a fixed position. |
 | `Q.tf({ q, truth, why, sol })` | True / false | Two options, so there is no second attempt. Use it sparingly, for sharp misconceptions only. |
 | `Q.multi({ q, options: [{ t, ok, why }], sol })` | Select all that apply | At least 3 options. Vary how many are correct, including just one or all of them. |
 | `Q.classify({ q, cats, items: [{ t, cat, why }], sol })` | Drop-down sorting | `cat` is a category label from `cats`. 4–6 items per question, drawn from a bank. |
