@@ -138,6 +138,18 @@ async function deep(page, c, tag) {
     await page.click("#pNext");
   }
   await check(page, tag, "mixed session");
+  // Daily mix: dashboard link → full session → summary screen.
+  await go(page, `#/${c.id}/practice/daily`);
+  for (let i = 0; i < 30 && !(await page.$("#dAgain")); i++) {
+    await answer(page, i % 3 ? "right" : "wrong");
+    if (await page.$("#ansCheck")) await page.click("#ansCheck");
+    while (await page.$("#ansHint")) await page.click("#ansHint");
+    if (await page.$("#pNext")) await page.click("#pNext");
+  }
+  if (!(await page.$("#dAgain"))) errors.push(`[${tag}] daily mix never reached its summary screen`);
+  await check(page, tag, "daily mix summary");
+  await go(page, `#/${c.id}/dashboard`);
+  if (!/Daily mix/.test(await page.innerText("#view"))) errors.push(`[${tag}] dashboard does not offer the daily mix`);
   // Concept drill.
   await go(page, `#/${c.id}/practice`);
   await page.click("#pIdent");

@@ -110,7 +110,6 @@ const App = (() => {
     const gens = c.units.flatMap(u => u.generators || []);
     let due = 0, fresh = 0;
     for (const u of decks) { const s = Store.deckStats(u.flashcards); due += s.due; fresh += s.fresh; }
-    const misses = Store.missCount();
     const upcoming = c.keyDates.filter(k => daysUntil(k.date) >= 0);
     const quiz = upcoming.find(k => k.kind === "quiz");
     const exam = upcoming.find(k => k.kind === "exam");
@@ -127,9 +126,9 @@ const App = (() => {
     if (due) plan.push({ pri: fresh === due ? 2 : 1, icon: "⧉", href: link("flashcards"),
       title: `Review ${due} flashcard${due === 1 ? "" : "s"}`,
       why: (fresh ? `${fresh} you have never seen; the rest are scheduled for today. ` : "Scheduled for today by the spacing system. ") + `About ${Math.max(1, Math.round(due * 0.2))} min.` });
-    if (misses) plan.push({ pri: 1, icon: "↺", href: link("practice"),
-      title: `Redo ${misses} missed question${misses === 1 ? "" : "s"}`,
-      why: "Re-attempting a miss is worth more than a fresh question you would have got right." });
+    if (gens.length) plan.push({ pri: 0.5, icon: "▶", href: link("practice", "daily"),
+      title: "Daily mix · about 15 minutes",
+      why: Practice.dailySummary() });
     if (quiz && daysUntil(quiz.date) <= 3 && gens.length) {
       const has = quiz.unit && STUDY.getUnit(c, quiz.unit);
       plan.push({ pri: 0, icon: "✎", href: has ? link("practice", quiz.unit) : link("exam"),
@@ -139,13 +138,6 @@ const App = (() => {
     if (exam && daysUntil(exam.date) <= 14 && gens.length) plan.push({ pri: 0, icon: "▦", href: link("exam"),
       title: `${exam.label.split("·")[0].trim()} ${inDays(daysUntil(exam.date))}`,
       why: "Sit a full-length rehearsal under the clock, then drill whatever it finds. Exams are cumulative." });
-    const weakest = gens.map(g => ({ g, w: Store.weakness(g.id), p: Store.getPractice(g.id) }))
-      .filter(x => x.p.attempts >= 3).sort((a, b) => b.w - a.w)[0];
-    if (weakest && weakest.w > 0.4) plan.push({ pri: 2, icon: "◎", href: link("practice"),
-      title: `Drill your weakest topic: ${weakest.g.name}`,
-      why: `${weakest.p.correct}/${weakest.p.attempts} first-try so far. "Target my weak spots" leans on topics like this.` });
-    if (!plan.length && gens.length) plan.push({ pri: 3, icon: "▶", href: link("practice"),
-      title: "Mixed practice session", why: "Nothing is due. Interleaved questions with the topic hidden are the best use of a spare ten minutes." });
     return plan.sort((a, b) => a.pri - b.pri).slice(0, 4);
   }
 
@@ -484,6 +476,7 @@ const App = (() => {
     dashboard, learn, reference, schedule, progress,
     flashcards: el => Flashcards.mount(el),
     practice: (el, arg) => {
+      if (arg === "daily") { Practice.mount(el); Practice.startDaily(el); return; }
       if (arg && arg.startsWith("topic:")) {
         Practice.mount(el);
         const btn = el.querySelector(`[data-gen="${arg.slice(6)}"]`);

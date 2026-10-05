@@ -216,6 +216,58 @@ section("Store: export / import / learn progress");
   ok(threw, "a non-progress file is refused");
 }
 
+section("Store: spaced practice topics & delayed misses");
+{
+  Store.use("spacing-test");
+  eq(Store.topicStatus("t").state, "new", "untried topic is new");
+  Store.recordPractice("t", true);
+  eq(Store.topicStatus("t").state, "scheduled", "one correct answer schedules a review");
+  ok(Store.topicStatus("t").dueAt > Date.now() + 20 * 3600e3, "first interval is about a day");
+  Store.recordPractice("t", true); Store.recordPractice("t", true);
+  const st3 = Store.topicStatus("t");
+  eq(st3.streak, 3, "streak counts consecutive correct answers");
+  eq(st3.state, "mastered", "three in a row with high accuracy is mastered");
+  ok(st3.dueAt > Date.now() + 6 * 864e5, "interval grows with the streak (7 days)");
+  Store.recordPractice("t", false);
+  eq(Store.topicStatus("t").state, "due", "a miss resets the streak and makes the topic due now");
+  // Forgetting: simulate time passing by back-dating the last practice.
+  Store.recordPractice("old", true); Store.recordPractice("old", true);
+  const fresh = Store.weakness("old");
+  const raw = JSON.parse(mem.get("iu-study:spacing-test"));
+  raw.practice.old.last = Date.now() - 40 * 864e5;
+  mem.set("iu-study:spacing-test", JSON.stringify(raw));
+  Store.use("x"); Store.use("spacing-test");
+  ok(Store.retention("old") < 0.2, "retention decays after a long gap");
+  ok(Store.weakness("old") > fresh + 0.2, "weakness rises as a topic is forgotten");
+  eq(Store.topicStatus("old").state, "due", "long-unpractised topic is due");
+  // Misses wait before they come back.
+  Store.recordMiss({ genId: "g1", variant: "v", unitId: "m1", problem: { q: "q" } });
+  eq(Store.dueMisses().length, 0, "a fresh miss is not offered again straight away");
+  const raw2 = JSON.parse(mem.get("iu-study:spacing-test"));
+  raw2.misses[0].at = Date.now() - Store.MISS_DELAY_MS - 1000;
+  mem.set("iu-study:spacing-test", JSON.stringify(raw2));
+  Store.use("x"); Store.use("spacing-test");
+  eq(Store.dueMisses().length, 1, "after the delay the miss is due");
+  Store.touchMiss(Store.dueMisses()[0].key);
+  eq(Store.dueMisses().length, 0, "missing it again restarts the delay");
+}
+
+section("Same-type retry and the daily mix");
+{
+  const g = course.units.flatMap(u => u.generators || [])[0];
+  if (g) {
+    const name = g.variantNames[g.variantNames.length - 1];
+    for (let i = 0; i < 5; i++) eq(g.makeVariant(name).variant, name, "makeVariant returns the requested type");
+    Store.use("econ-b251");
+    const q = Practice.buildDaily();
+    ok(q.length >= Math.min(6, course.units.flatMap(u => u.generators || []).length), `daily mix has a full queue (${q.length})`);
+    let adj = 0;
+    for (let i = 1; i < q.length; i++) if (q[i].genId && q[i].genId === q[i - 1].genId) adj++;
+    eq(adj, 0, "daily mix never serves the same topic twice in a row");
+    ok(q.every(it => it.type === "gen" || it.type === "miss"), "daily items are topics or due misses");
+  }
+}
+
 /* ---------- schedule ---------- */
 section("Schedule lookup");
 {
