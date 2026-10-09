@@ -142,6 +142,11 @@ Aim for **5–8 variants per topic**. Make them differ in the *thinking required
 
 **Original wording.** Course slides belong to the instructor, and the syllabus forbids reposting them. Explain the ideas in your own words, with your own examples and numbers. Never paste slide text or reuse the instructor's worked examples verbatim. The site is public.
 
+## Optional extras
+
+- **Shared question kit.** A course can keep helpers in its own non-unit file loaded after `course.js`. For example, `courses/bus-k201/kit.js` builds the five standard "tell these categories apart" question types from a bank of labelled examples.
+- **SQL Lab.** A course gets a SQL Lab view by attaching `sqlLab = { intro, setup, tables, exercises }` to its course object, as `courses/bus-k201/sqllab.js` does. `setup` is SQL that builds the practice database. Each exercise has a `solution` written in the course's SQL dialect, and grading compares the student's result rows with the solution's. Run `node tools/check-sqllab.js` after editing.
+
 ## Conventions and gotchas
 
 - **Stable ids.** Card, generator, unit and course ids key saved progress. Never rename them once pushed. Prefix them with the course and unit, e.g. `b251-m2-compadv`.
