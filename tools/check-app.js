@@ -285,6 +285,14 @@ section("Same-type retry and the daily mix");
   }
 }
 
+/* ---------- round-robin picker ---------- */
+section("Round-robin picker");
+{
+  const R = k => STUDY.util.rotate(k, ["a", "b", "c", "d", "e", "f"]);
+  R("shrink-test");                                  // leaves a queue of 5 indices into a 6-item list
+  for (let i = 0; i < 6; i++) ok(["x", "y"].includes(STUDY.util.rotate("shrink-test", ["x", "y"])), "a shorter list never yields undefined");
+}
+
 /* ---------- schedule ---------- */
 section("Schedule lookup");
 {
@@ -329,7 +337,7 @@ section("Exam builder");
 /* ---------- every generated problem round-trips through the grader ---------- */
 section("Every topic grades its own answer as correct");
 {
-  for (const u of course.units) for (const g of (u.generators || [])) {
+  for (const cc of STUDY.courses) for (const u of cc.units) for (const g of (u.generators || [])) {
     for (let i = 0; i < 40; i++) {
       const p = g.make();
       let r;

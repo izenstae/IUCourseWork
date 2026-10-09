@@ -42,13 +42,26 @@ async function run() {
       await page.waitForSelector(".course-card");
       await check(page, tag, "hub");
 
-      const courses = await page.evaluate(() => STUDY.courses.map(c => ({ id: c.id, units: c.units.map(u => u.id) })));
+      const courses = await page.evaluate(() => STUDY.courses.map(c => ({ id: c.id, units: c.units.map(u => u.id), lab: c.sqlLab ? c.sqlLab.exercises.map(x => x.id) : null })));
       for (const c of courses) {
         for (const v of ["dashboard", "learn", "flashcards", "reference", "schedule", "progress", "exam", "practice"]) {
           await go(page, `#/${c.id}/${v}`);
           await check(page, tag, `${c.id}/${v}`);
         }
         for (const u of c.units) { await go(page, `#/${c.id}/learn/${u}`); await check(page, tag, `${c.id}/learn/${u}`); }
+        if (c.lab) {
+          // SQL Lab: free practice run, then one exercise checked right and one with an error
+          await go(page, `#/${c.id}/sqllab`);
+          await page.waitForSelector("#sqlEd", { timeout: 20000 });
+          await page.click("#sqlRun");
+          await check(page, tag, `${c.id}/sqllab`);
+          await go(page, `#/${c.id}/sqllab/${c.lab[0]}`);
+          await page.waitForSelector("#sqlCheck");
+          await page.click("#sqlSol");
+          await page.fill("#sqlEd", "SELECT nope FROM dbo.NOWHERE");
+          await page.click("#sqlCheck");
+          await check(page, tag, `${c.id}/sqllab/${c.lab[0]}`);
+        }
         if (vp.name === "desktop" && theme === "light") await deep(page, c, tag);
       }
       await ctx.close();
