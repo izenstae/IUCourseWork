@@ -467,3 +467,6 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
   .sql-layout { grid-template-columns: minmax(0, 1fr); }
   .sql-side { position: static; max-height: none; order: 2; }
 }
+
+/* Lesson tables written inline (no .tbl-wrap) scroll instead of widening the page on phones. */
+.lesson-body table.tbl { display: block; max-width: 100%; overflow-x: auto; }
