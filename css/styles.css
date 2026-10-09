@@ -437,3 +437,33 @@ svg.graph { display: block; width: 100%; max-width: 440px; height: auto; margin:
   body.printing-sheet .ident-formula { margin: 1pt 0 0; font-size: 8pt; }
   body.printing-sheet .pill { background: none; color: #444; padding: 0 3pt 0 0; font-size: 7pt; }
 }
+
+/* ---------- code blocks (questions, lessons) ---------- */
+.code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; white-space: pre-wrap; overflow-x: auto;
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin: 8px 0; line-height: 1.5; }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .92em; }
+
+/* ---------- SQL Lab ---------- */
+.sql-layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 18px; align-items: start; }
+.sql-side { position: sticky; top: 76px; max-height: calc(100vh - 96px); overflow-y: auto; padding: 14px; }
+.sql-ex { display: flex; gap: 8px; align-items: baseline; padding: 6px 8px; border-radius: 8px; color: var(--text); font-size: 14px; }
+.sql-ex:hover { background: var(--surface-2); }
+.sql-ex.active { background: var(--accent-soft); color: var(--accent); }
+.sql-ex .small { margin-left: auto; white-space: nowrap; }
+.sql-tick { width: 1em; flex-shrink: 0; color: var(--green); }
+.sql-table summary { cursor: pointer; padding: 4px 0; display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.sql-table table { margin: 4px 0 10px; }
+.sql-editor { width: 100%; min-height: 220px; resize: vertical; box-sizing: border-box; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 14px; line-height: 1.5; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); tab-size: 2; }
+.sql-editor:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.sql-msg { margin: 12px 0; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); }
+.sql-msg.good { background: var(--green-soft); }
+.sql-msg.bad { background: var(--red-soft); }
+.sql-msg.info { background: var(--blue-soft); }
+.sql-result { max-height: 460px; overflow: auto; }
+.sql-result td.null { color: var(--text-dim); font-style: italic; }
+.sql-result td, .sql-result th { white-space: nowrap; }
+@media (max-width: 900px) {
+  .sql-layout { grid-template-columns: minmax(0, 1fr); }
+  .sql-side { position: static; max-height: none; order: 2; }
+}

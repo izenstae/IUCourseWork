@@ -329,7 +329,7 @@ section("Exam builder");
 /* ---------- every generated problem round-trips through the grader ---------- */
 section("Every topic grades its own answer as correct");
 {
-  for (const u of course.units) for (const g of (u.generators || [])) {
+  for (const cc of STUDY.courses) for (const u of cc.units) for (const g of (u.generators || [])) {
     for (let i = 0; i < 40; i++) {
       const p = g.make();
       let r;
