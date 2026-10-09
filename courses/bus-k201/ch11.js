@@ -670,8 +670,11 @@ ${ul(["<b>Act</b>: the evidence is sufficient and consistent; go ahead.",
       {
         name: "Follow an identifier to its table",
         make() {
-          const log = makeLog();
-          const evs = allEvents(log).filter(e => ["product_id", "promotion_id", "location_id", "order_id"].some(k => e[k]));
+          let log, evs;
+          do {   // a small random slice can lack any identifier-carrying event; redraw
+            log = makeLog();
+            evs = allEvents(log).filter(e => ["product_id", "promotion_id", "location_id", "order_id"].some(k => e[k]));
+          } while (!evs.length);
           const e = U.pick(evs);
           const keys = ["order_id", "location_id", "promotion_id", "product_id"].filter(k => e[k]);
           const k = keys[0];
