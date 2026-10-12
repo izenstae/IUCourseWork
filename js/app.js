@@ -17,6 +17,7 @@ const App = (() => {
     { id: "flashcards", label: "Flashcards", ico: "⧉" },
     { id: "practice", label: "Practice", ico: "✎" },
     { id: "exam", label: "Exam Mode", ico: "⏱" },
+    { id: "sqllab", label: "SQL Lab", ico: "⌨", only: c => !!c.sqlLab },
     { id: "reference", label: "Reference", ico: "☰" },
     { id: "schedule", label: "Schedule", ico: "▦" },
     { id: "progress", label: "Progress", ico: "▤" },
@@ -207,6 +208,9 @@ const App = (() => {
         <div class="topic-row">${pctPill(Math.round(100 * lastExam.correct / lastExam.n))}
           <div style="flex:1">${lastExam.label} · ${lastExam.correct}/${lastExam.n} · ${lastExam.scopeLabel || ""}</div>
           <a class="btn btn-sm btn-ghost" href="${link("exam")}">Sit another</a></div></div>` : ""}
+      ${c.sqlLab ? `<div class="card topic-row"><span class="plan-ico">⌨</span>
+        <div style="flex:1"><b>SQL Lab</b> <span class="muted">· ${SqlLab.solvedCount(c)}/${c.sqlLab.exercises.length} exercises solved. Write and run real queries against a practice database.</span></div>
+        <a class="btn btn-sm" href="${link("sqllab")}">Open</a></div>` : ""}
       <div class="grid-2">${unitCards}</div>
       ${missing.length ? `<div class="card callout-card"><b>Waiting for material:</b> ${missing.map(r => r.title).join(" · ")}. Add the lecture files when they're released and they will show up here.</div>` : ""}
       <div class="card">
@@ -490,6 +494,7 @@ const App = (() => {
       Practice.mount(el, arg ? { unit: arg } : null);
     },
     exam: el => Exam.mount(el),
+    sqllab: (el, arg) => SqlLab.mount(el, arg),
   };
 
   function renderNav() {
@@ -511,7 +516,7 @@ const App = (() => {
     document.getElementById("brandSub").textContent = active.name;
     nav.innerHTML = `<a href="#/" class="nav-back"><span class="nav-ico">←</span> All courses</a>
       <div class="nav-label">${active.code}</div>` +
-      VIEWS.map(v => `<a href="#/${active.id}/${v.id}" data-route="${v.id}"><span class="nav-ico">${v.ico}</span> ${v.label}</a>`).join("") +
+      VIEWS.filter(v => !v.only || v.only(active)).map(v => `<a href="#/${active.id}/${v.id}" data-route="${v.id}"><span class="nav-ico">${v.ico}</span> ${v.label}</a>`).join("") +
       (STUDY.courses.length > 1 ? `<div class="nav-label">Switch course</div>` + STUDY.courses.filter(c => c !== active).map(c => `<a href="#/${c.id}/dashboard"><span class="nav-ico">${c.mark.slice(0, 2)}</span> ${c.code}</a>`).join("") : "");
     document.getElementById("footNote").textContent = active.text || "";
   }
@@ -521,7 +526,8 @@ const App = (() => {
     const parts = (location.hash || "#/").replace(/^#\/?/, "").split("/").filter(Boolean);
     const c = parts.length ? STUDY.getCourse(parts[0]) : null;
     if (parts.length && !c) { location.replace("#/"); return; }
-    const viewId = c ? (MOUNT[parts[1]] ? parts[1] : "dashboard") : null;
+    const known = c && MOUNT[parts[1]] && (VIEWS.find(v => v.id === parts[1]) || {}).only?.(c) !== false;
+    const viewId = c ? (known ? parts[1] : "dashboard") : null;
     const arg = parts.slice(2).join("/") || null;
 
     // An unfinished sitting survives navigation (its clock is wall-time

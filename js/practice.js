@@ -517,7 +517,7 @@ const Identify = (() => {
   }
 
   function nextQ(el) {
-    const gen = STUDY.util.rotate("identify", s.pool);
+    const gen = STUDY.util.rotate("identify:" + App.course().id, s.pool);
     s.q = gen.make();
     s.gen = gen;
     s.options = STUDY.util.shuffle([gen, ...STUDY.util.shuffle(s.pool.filter(g => g.id !== gen.id)).slice(0, 3)]);

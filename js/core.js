@@ -92,6 +92,8 @@ window.STUDY = {
       if (!list || !list.length) return null;
       if (list.length === 1) return list[0];
       let q = this._queues[key];
+      // A queue built for a longer list (e.g. another course's pool) is stale.
+      if (q && q.some(i => i >= list.length)) q = null;
       if (!q || !q.length) {
         q = this.shuffle(list.map((_, i) => i));
         if (q[0] === this._last[key]) [q[0], q[1]] = [q[1], q[0]];

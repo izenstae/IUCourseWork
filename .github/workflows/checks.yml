@@ -20,5 +20,7 @@ jobs:
         run: node tools/check-content.js 1000
       - name: Test the study logic (grading, store, scheduling, exam builder)
         run: node tools/check-app.js
+      - name: SQL Lab engine and exercises
+        run: node tools/check-sqllab.js
       - name: Learning-quality audit (lessons, coverage, feedback, hint ladders)
         run: node tools/audit-learning.js --strict

@@ -13,6 +13,7 @@ It is modelled on the [MATH 340 Probability Studio](https://github.com/izenstae/
 | Course | Term | Units loaded | Cards | Topics | Question types |
 | --- | --- | --- | ---: | ---: | ---: |
 | **ECON B251** · Principles of Microeconomics (J. Chen) | Fall 2026 | Modules 1–12 (all) | 415 | 94 | 692 |
+| **BUS K201** · The Computer in Business (Kelley) | Fall 2026 | Chapters 2–12 + SQL Lab | 385 | 83 | 614 |
 | *More courses* | | Added as material is provided | | | |
 
 ### ECON B251 content
@@ -33,6 +34,28 @@ It is modelled on the [MATH 340 Probability Studio](https://github.com/izenstae/
 | Module 12 · Oligopolies and Game Theory — oligopoly traits, game vocabulary, dominant strategies, Nash equilibrium, prisoners' dilemma, collusion & tit-for-tat, sequential games | 6 | 26 | 7 | 49 | ✅ Available |
 
 The course's schedule, Friday quiz and Saturday Q&A due dates, exam dates (Exam 1 Oct 1, Exam 2 Nov 5, final Dec 17), and grade weights come from the syllabus. Exam-mode presets match the real assessments.
+
+### BUS K201 content
+
+| Chapter | Lessons | Cards | Topics | Question types |
+| --- | ---: | ---: | ---: | ---: |
+| Ch 2 · Introduction to Computing and IU Resources: data vs. information, collection costs, volatile vs. non-volatile and structured vs. unstructured data, AI types, on-premises vs. edge vs. cloud, IUanyWare/OneDrive/Canvas/SharePoint/Duo, sharing and verifying a submission | 8 | 39 | 7 | 51 |
+| Ch 3 · Information Systems in Business: data/information/knowledge, the sociotechnical PPT view (Sparky's HR Flow), TPS/MIS/DSS/EIS, business processes, functional systems and ERP, Porter's Five Forces and generic strategies | 10 | 40 | 8 | 57 |
+| Ch 4 · Process Analysis with ITO and BPMN: BPM lifecycle, ITO breakdowns, map types, BPMN symbols, reading generated BPMN diagrams (paths, lanes, handoffs), bottlenecks and metrics, As-Is vs. To-Be, gap analysis, change management | 9 | 37 | 8 | 63 |
+| Ch 5 · From Requirements to Reality: the SDLC as a handoff system, problem framing and ROI, requirements vs. complaints/design choices/workarounds, build vs. buy vs. configure, Waterfall/Agile/DevOps, use cases, edge cases and Given/When/Then tests, production signals | 9 | 38 | 8 | 56 |
+| Ch 6 · Business Data Foundations: conceptual/logical/physical models, entities and attributes, the noun/verb technique, structural vs. operative rules, cardinality, simplified crow's foot ERDs, data integrity | 8 | 28 | 8 | 64 |
+| Ch 7 · Enterprise Systems: CRM vs. SCM vs. ERP, ERP integration, decision support, systems mapping, information silos, best-of-breed vs. integrated suite vs. hybrid, the human side | 8 | 37 | 8 | 56 |
+| Ch 8 · Designing a Trustworthy ERD: process vs. procedure, data events, values vs. structure, flat-file failures, PKs/FKs and associative entities, crow's foot marks, the Bean & Byte ERD | 7 | 32 | 7 | 51 |
+| Ch 9 · The Verification Gap: schema/RDBMS/client, data types and constraints, enforced vs. logical FKs, reading SELECT TOP (1000), auditing generated tables for integrity, rule and quality problems | 7 | 32 | 7 | 54 |
+| Ch 10 · Querying for Answers You Can Defend: execution order, WHERE operators on generated tables, calculated columns, INNER vs. LEFT JOIN, COUNT/SUM/AVG with GROUP BY, clean totals and disclosure | 8 | 32 | 7 | 50 |
+| Ch 11 · Choosing the Right Home for Business Data: structured/semi-structured/unstructured, raw vs. organized, reading nested JSON, storage routing, what each source can prove, data lake vs. warehouse | 8 | 31 | 7 | 49 |
+| Ch 12 · Modern Data Architectures and GenAI: grain, identifier mappings, traceability, architecture components, the CORE prompt, auditing an AI architecture, approval decisions | 9 | 39 | 8 | 63 |
+
+**⌨ SQL Lab (K201).** Write and run real SQL in the browser against a practice copy of a three-store retail database modelled on the course's Hoosier Holdings case. It has the same six tables and the same kinds of planted problems: non-IU emails, products from stores that do not exist, orphaned orders, negative quantities, deep discounts, an out-of-range rating and a 2035 order date. There are 26 graded exercises across Chapters 9–10, from reading tables through WHERE, calculated columns, joins and GROUP BY, ending with "revenue you can defend". Each has hints and a solution.
+- Grading compares result rows, so any column alias works. Row order is checked when the question asks for a sort.
+- SQL Server syntax works as taught: `TOP (n)`, `dbo.` and bracketed names. The lab also raises SQL Server's errors where SQLite would be more forgiving: a SELECT alias used in WHERE, and a non-aggregated column missing from GROUP BY.
+
+No syllabus has been added yet, so K201 has no dated schedule or grade weights. Its exam-mode presets are study sets: a chapter check, Sprint 1 review, Sprint 2 review and everything so far.
 
 ## What's in each course
 
@@ -94,7 +117,7 @@ The quickest route is to upload the new slides, notes or syllabus to Claude and 
 
 ## Checks
 
-Plain Node, no dependencies. The `Checks` workflow runs the first three on every push and pull request, and the deploy re-runs them before publishing:
+Plain Node, no dependencies. The `Checks` workflow runs the first four on every push and pull request, and the deploy re-runs them before publishing:
 
 ```sh
 node tools/check-content.js 1000   # every generator in every course, 1000x: well-posed questions, valid answers,
@@ -104,6 +127,8 @@ node tools/check-app.js            # grading for every question kind, misconcept
                                    # every generated question accepts its own answer
 node tools/audit-learning.js       # learning-quality bar per unit: lessons with key idea/example/trap, every topic
                                    # linked from a lesson, ≥5 question types per topic, explained wrong options, hint ladders
+node tools/check-sqllab.js         # SQL Lab: SQL Server translation and error rules, planted data problems, every
+                                   # exercise's reference solution runs and grades itself correct
 node tools/check-browser.js        # (local, needs Playwright) drives every view of every course in headless Chromium
                                    # at desktop and phone widths, light and dark; fails on any page/console error
 ```
@@ -120,15 +145,22 @@ node tools/check-browser.js        # (local, needs Playwright) drives every view
 │   ├── practice.js            # Practice sessions, hints & second attempts, redo queue, "Which concept?" drill
 │   ├── flashcards.js          # Leitner review and cram sessions
 │   ├── exam.js                # Timed deferred-feedback sittings + report
+│   ├── sqllab.js              # SQL Lab: editor, SQL Server → SQLite translation, grading
 │   └── app.js                 # Router, course hub, dashboard, learn, reference, schedule, progress
 ├── courses/
-│   └── econ-b251/
-│       ├── course.js          # Syllabus facts: schedule, key dates, grade weights, exam presets
-│       ├── m1.js              # Module 1 · Basic Economics
-│       ├── …                  # m2.js – m11.js, one file per module
-│       └── m12.js             # Module 12 · Oligopolies and Game Theory
+│   ├── econ-b251/
+│   │   ├── course.js          # Syllabus facts: schedule, key dates, grade weights, exam presets
+│   │   ├── m1.js              # Module 1 · Basic Economics
+│   │   ├── …                  # m2.js – m11.js, one file per module
+│   │   └── m12.js             # Module 12 · Oligopolies and Game Theory
+│   └── bus-k201/
+│       ├── course.js          # Course facts and exam presets
+│       ├── kit.js             # Shared question builders (sort / pick / NOT / select-all / name-the-category)
+│       ├── sqllab.js          # SQL Lab database and exercises
+│       └── ch2.js … ch12.js   # One file per chapter
 ├── lib/katex/                 # Vendored KaTeX
-├── tools/                     # check-content.js, check-app.js, check-browser.js, screenshots.js
+├── lib/sqljs/                 # Vendored sql.js (SQLite, asm build, MIT), loaded only by the SQL Lab
+├── tools/                     # check-content.js, check-app.js, check-sqllab.js, audit-learning.js, check-browser.js, screenshots.js
 ├── docs/ADDING_CONTENT.md     # How to add a module or a course
 └── .github/workflows/         # checks.yml (CI) and deploy-pages.yml (GitHub Pages)
 ```
